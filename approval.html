@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Keystone — Sign Request</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      width: 400px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #111;
+      background: #fff;
+      margin: 0;
+    }
+    h1 { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+    .row-label { font-size: 11px; color: #888; margin-bottom: 3px; }
+    .origin {
+      font-size: 13px; font-weight: 600;
+      background: #f4f4f5; padding: 7px 10px;
+      border-radius: 6px; margin-bottom: 12px;
+      word-break: break-all;
+    }
+    .challenge {
+      font-family: monospace; font-size: 10px;
+      background: #f4f4f5; padding: 8px 10px;
+      border-radius: 6px; word-break: break-all;
+      max-height: 72px; overflow-y: auto;
+      margin-bottom: 16px;
+    }
+    label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; }
+    input[type="password"] {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; margin-bottom: 10px; outline: none;
+    }
+    input:focus { border-color: #111; }
+    .actions { display: flex; gap: 8px; }
+    .btn {
+      flex: 1; padding: 9px;
+      border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-approve { background: #111; color: #fff; }
+    .btn-approve:not(:disabled):hover { background: #333; }
+    .btn-deny {
+      background: transparent; color: #555;
+      border: 1px solid #d1d5db;
+    }
+    .btn-deny:hover { background: #f9f9f9; }
+    .error { color: #dc2626; font-size: 12px; margin-top: 8px; min-height: 18px; }
+    .loading { color: #888; font-size: 13px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>Sign Request</h1>
+
+  <p class="loading" id="loading">Loading…</p>
+
+  <div id="content" hidden>
+    <div class="row-label">Requesting site</div>
+    <div class="origin" id="req-origin"></div>
+
+    <div class="row-label">Challenge to sign</div>
+    <div class="challenge" id="req-challenge"></div>
+
+    <label for="ap-pw">Enter your Keystone password to approve</label>
+    <input type="password" id="ap-pw" placeholder="Password" autofocus>
+
+    <div class="actions">
+      <button class="btn btn-deny"    id="deny-btn">Deny</button>
+      <button class="btn btn-approve" id="approve-btn">Sign &amp; Approve</button>
+    </div>
+    <div class="error" id="ap-error"></div>
+  </div>
+
+  <script type="module" src="./src/approval.ts"></script>
+</body>
+</html>
