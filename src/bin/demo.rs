@@ -7,7 +7,10 @@ fn main() {
     println!("[ Device A ] Generating identity...");
     let identity_a = Identity::generate();
     println!("  Public key : {}", identity_a.public_key_hex());
-    println!("  Private key: {} (keep secret!)\n", identity_a.private_key_hex());
+    println!(
+        "  Private key: {} (keep secret!)\n",
+        identity_a.private_key_hex()
+    );
 
     let content = "Hello from Device A — I authored this.";
     println!("[ Device A ] Signing message: {:?}", content);

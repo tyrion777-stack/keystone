@@ -1,6 +1,6 @@
 use futures::StreamExt;
-use keystone_core::network::{build_swarm, KeystoneBehaviourEvent};
-use libp2p::{kad, mdns, multiaddr::Protocol, swarm::SwarmEvent, Multiaddr};
+use keystone_core::network::{KeystoneBehaviourEvent, build_swarm};
+use libp2p::{Multiaddr, kad, mdns, multiaddr::Protocol, swarm::SwarmEvent};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,11 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         match swarm.select_next_some().await {
             SwarmEvent::NewListenAddr { address, .. } => {
-                println!(
-                    "Listening on : {}/p2p/{}",
-                    address,
-                    swarm.local_peer_id()
-                );
+                println!("Listening on : {}/p2p/{}", address, swarm.local_peer_id());
             }
             SwarmEvent::ConnectionEstablished { peer_id, .. } => {
                 if peer_id == bootstrap_peer_id {
@@ -67,7 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             continue; // skip bootstrap, already connected
                         }
                         println!("[m] mDNS found peer  : {peer_id}");
-                        swarm.behaviour_mut().kad.add_address(&peer_id, addr.clone());
+                        swarm
+                            .behaviour_mut()
+                            .kad
+                            .add_address(&peer_id, addr.clone());
                         let _ = swarm.dial(addr);
                     }
                 }
@@ -89,12 +88,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 KeystoneBehaviourEvent::Kad(kad::Event::OutboundQueryProgressed {
-                    result: kad::QueryResult::Bootstrap(Ok(kad::BootstrapOk { num_remaining, .. })),
+                    result:
+                        kad::QueryResult::Bootstrap(Ok(kad::BootstrapOk {
+                            num_remaining: 0, ..
+                        })),
                     ..
                 }) => {
-                    if num_remaining == 0 {
-                        println!("[✓] Bootstrap complete — routing table populated");
-                    }
+                    println!("[✓] Bootstrap complete — routing table populated");
                 }
                 _ => {}
             },
