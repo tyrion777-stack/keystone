@@ -1,15 +1,20 @@
 use std::time::Duration;
 
 use libp2p::{
-    dcutr, identify, identity, kad,
+    StreamProtocol, Swarm, SwarmBuilder, dcutr, identify, identity, kad,
     kad::store::MemoryStore,
     mdns, noise, ping, relay,
     request_response::{self, ProtocolSupport},
     swarm::NetworkBehaviour,
-    tcp, yamux, Swarm, SwarmBuilder, StreamProtocol,
+    tcp, yamux,
 };
 
-use crate::{identity::Identity, protocol::{ChunkRequest, ChunkResponse, ContentRequest, ContentResponse, FollowRequest, FollowResponse}};
+use crate::{
+    identity::Identity,
+    protocol::{
+        ChunkRequest, ChunkResponse, ContentRequest, ContentResponse, FollowRequest, FollowResponse,
+    },
+};
 
 pub const PROTOCOL: &str = "/keystone/1.0.0";
 pub const FOLLOWS_PROTOCOL: &str = "/keystone/follows/1.0";
@@ -35,11 +40,15 @@ pub struct KeystoneBehaviour {
 ///
 /// Both are Ed25519 under the hood — same bytes, different Rust types.
 /// This bridge lets the swarm use your real identity instead of a random one.
-pub fn keypair_from_identity(id: &Identity) -> Result<identity::Keypair, Box<dyn std::error::Error>> {
+pub fn keypair_from_identity(
+    id: &Identity,
+) -> Result<identity::Keypair, Box<dyn std::error::Error>> {
     let mut bytes = hex::decode(id.private_key_hex())?;
-    let secret = identity::ed25519::SecretKey::try_from_bytes(&mut bytes)
-        .map_err(|e| e.to_string())?;
-    Ok(identity::Keypair::from(identity::ed25519::Keypair::from(secret)))
+    let secret =
+        identity::ed25519::SecretKey::try_from_bytes(&mut bytes).map_err(|e| e.to_string())?;
+    Ok(identity::Keypair::from(identity::ed25519::Keypair::from(
+        secret,
+    )))
 }
 
 pub fn build_swarm() -> Result<Swarm<KeystoneBehaviour>, Box<dyn std::error::Error>> {
@@ -82,24 +91,15 @@ pub fn build_swarm_with_keypair(
                 kad: kad::Behaviour::new(peer_id, store),
                 mdns: mdns::tokio::Behaviour::new(mdns::Config::default(), peer_id)?,
                 follows: request_response::json::Behaviour::new(
-                    [(
-                        StreamProtocol::new(FOLLOWS_PROTOCOL),
-                        ProtocolSupport::Full,
-                    )],
+                    [(StreamProtocol::new(FOLLOWS_PROTOCOL), ProtocolSupport::Full)],
                     request_response::Config::default(),
                 ),
                 content: request_response::cbor::Behaviour::new(
-                    [(
-                        StreamProtocol::new(CONTENT_PROTOCOL),
-                        ProtocolSupport::Full,
-                    )],
+                    [(StreamProtocol::new(CONTENT_PROTOCOL), ProtocolSupport::Full)],
                     request_response::Config::default(),
                 ),
                 chunks: request_response::cbor::Behaviour::new(
-                    [(
-                        StreamProtocol::new(CHUNKS_PROTOCOL),
-                        ProtocolSupport::Full,
-                    )],
+                    [(StreamProtocol::new(CHUNKS_PROTOCOL), ProtocolSupport::Full)],
                     request_response::Config::default(),
                 ),
                 relay_client,

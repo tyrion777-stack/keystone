@@ -1,12 +1,12 @@
 use std::path::Path;
 
 use aes_gcm::{
-    aead::{Aead, KeyInit},
     Aes256Gcm, Key, Nonce,
+    aead::{Aead, KeyInit},
 };
 use argon2::Argon2;
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
-use rand::{rngs::OsRng, RngCore};
+use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
@@ -41,7 +41,10 @@ impl Identity {
     pub fn generate() -> Self {
         let signing_key = SigningKey::generate(&mut OsRng);
         let x25519_secret = StaticSecret::random_from_rng(OsRng);
-        Self { signing_key, x25519_secret }
+        Self {
+            signing_key,
+            x25519_secret,
+        }
     }
 
     /// Restore an identity from a previously exported private key (hex string).
@@ -52,7 +55,10 @@ impl Identity {
             .map_err(|_| KeystoneError::InvalidPrivateKey("must be 32 bytes".into()))?;
         let signing_key = SigningKey::from_bytes(&arr);
         let x25519_secret = derive_x25519(&arr);
-        Ok(Self { signing_key, x25519_secret })
+        Ok(Self {
+            signing_key,
+            x25519_secret,
+        })
     }
 
     /// The public key as a hex string — this is your Keystone identity.
@@ -79,7 +85,11 @@ impl Identity {
     /// Save the identity to disk, locked with a password.
     /// The file is useless without the password — safe to store anywhere.
     /// Plaintext format: ed25519_private(32) || x25519_private(32) = 64 bytes.
-    pub fn save_encrypted<P: AsRef<Path>>(&self, path: P, password: &str) -> Result<(), KeystoneError> {
+    pub fn save_encrypted<P: AsRef<Path>>(
+        &self,
+        path: P,
+        password: &str,
+    ) -> Result<(), KeystoneError> {
         let mut salt = [0u8; SALT_LEN];
         let mut nonce = [0u8; NONCE_LEN];
         OsRng.fill_bytes(&mut salt);
@@ -115,7 +125,9 @@ impl Identity {
         let blob = std::fs::read(path).map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
 
         if blob.len() < SALT_LEN + NONCE_LEN + 1 {
-            return Err(KeystoneError::KeyStorage("file is too short or corrupted".into()));
+            return Err(KeystoneError::KeyStorage(
+                "file is too short or corrupted".into(),
+            ));
         }
 
         let salt = &blob[..SALT_LEN];
@@ -143,7 +155,11 @@ impl Identity {
                 let x_arr: [u8; 32] = plaintext[32..].try_into().unwrap();
                 (ed_arr, StaticSecret::from(x_arr))
             }
-            _ => return Err(KeystoneError::KeyStorage("invalid key length in file".into())),
+            _ => {
+                return Err(KeystoneError::KeyStorage(
+                    "invalid key length in file".into(),
+                ));
+            }
         };
 
         Ok(Self {

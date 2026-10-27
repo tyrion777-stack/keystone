@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use futures::StreamExt;
-use keystone_core::network::{build_swarm_with_keypair, KeystoneBehaviourEvent};
+use keystone_core::network::{KeystoneBehaviourEvent, build_swarm_with_keypair};
 use libp2p::{identify, identity::Keypair, kad, relay, swarm::SwarmEvent};
 
 // Where the keypair is saved on disk — stable across restarts.
@@ -11,10 +11,13 @@ const DEFAULT_KEY_PATH: &str = "bootstrap.key";
 fn load_or_create_keypair(path: &PathBuf) -> Keypair {
     if path.exists() {
         let bytes = std::fs::read(path).expect("could not read keypair file");
-        Keypair::from_protobuf_encoding(&bytes).expect("keypair file is corrupt — delete it to regenerate")
+        Keypair::from_protobuf_encoding(&bytes)
+            .expect("keypair file is corrupt — delete it to regenerate")
     } else {
         let keypair = Keypair::generate_ed25519();
-        let bytes = keypair.to_protobuf_encoding().expect("failed to encode keypair");
+        let bytes = keypair
+            .to_protobuf_encoding()
+            .expect("failed to encode keypair");
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
@@ -48,11 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let s = address.to_string();
                 // Only print routable addresses
                 if !s.contains("127.0.0.1") {
-                    println!(
-                        "Listening : {}/p2p/{}",
-                        address,
-                        swarm.local_peer_id()
-                    );
+                    println!("Listening : {}/p2p/{}", address, swarm.local_peer_id());
                     println!();
                     println!("Hardcode the line above as the bootstrap address in other nodes.");
                     println!();
@@ -67,22 +66,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("[-] Disconnected : {peer_id}  ({cause:?})");
             }
 
-            SwarmEvent::Behaviour(event) => {
+            SwarmEvent::Behaviour(event) =>
+            {
                 #[allow(deprecated)]
                 match event {
-                    KeystoneBehaviourEvent::Identify(identify::Event::Received { peer_id, info, .. }) => {
-                        println!("[i] Identified   : {peer_id}  protocol={}", info.protocol_version);
+                    KeystoneBehaviourEvent::Identify(identify::Event::Received {
+                        peer_id,
+                        info,
+                        ..
+                    }) => {
+                        println!(
+                            "[i] Identified   : {peer_id}  protocol={}",
+                            info.protocol_version
+                        );
                         for addr in info.listen_addrs {
                             swarm.behaviour_mut().kad.add_address(&peer_id, addr);
                         }
                     }
-                    KeystoneBehaviourEvent::RelayServer(relay::Event::ReservationReqAccepted { src_peer_id, .. }) => {
+                    KeystoneBehaviourEvent::RelayServer(relay::Event::ReservationReqAccepted {
+                        src_peer_id,
+                        ..
+                    }) => {
                         println!("[r] Relay reservation : {src_peer_id}");
                     }
-                    KeystoneBehaviourEvent::RelayServer(relay::Event::CircuitReqAccepted { src_peer_id, dst_peer_id }) => {
+                    KeystoneBehaviourEvent::RelayServer(relay::Event::CircuitReqAccepted {
+                        src_peer_id,
+                        dst_peer_id,
+                    }) => {
                         println!("[r] Circuit accepted  : {src_peer_id} → {dst_peer_id}");
                     }
-                    KeystoneBehaviourEvent::RelayServer(relay::Event::CircuitClosed { src_peer_id, dst_peer_id, .. }) => {
+                    KeystoneBehaviourEvent::RelayServer(relay::Event::CircuitClosed {
+                        src_peer_id,
+                        dst_peer_id,
+                        ..
+                    }) => {
                         println!("[r] Circuit closed    : {src_peer_id} ↔ {dst_peer_id}");
                     }
                     _ => {}
