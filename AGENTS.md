@@ -25,7 +25,7 @@ Class:       A / B / C
   show the ticket and go ahead unless ambiguous.
 - **Class A** (anything touching the signing or verification path, key storage, hash
   or bounds validation, wire format of existing message types — `src/identity.rs`,
-  `src/content.rs` security paths, `src/error.rs`, the `alg` dispatch): show the
+  `src/content.rs` security paths, `src/error.rs`, `src/key.rs` algorithm dispatch): show the
   ticket **and a short plan**, wait for a yes before writing code.
 
 When unsure of the class, pick the higher one.
@@ -66,9 +66,9 @@ When unsure of the class, pick the higher one.
 - **Never name a real service, person, domain, or field of work** in an example, test
   fixture, or doc. Use a generic "front desk" or `example.com`.
 - **Never break an existing verifier.** The wire format of a published message type is
-  stable. Additions (new optional fields, new `alg` variants) are fine; removals and
-  renames are not. `alg` defaults to `ed25519` so every existing message still verifies
-  without the field.
+  stable. Additions (new optional fields, new key-prefix algorithms) are fine; removals
+  and renames are not. A bare-hex `author` is Ed25519, so every existing message still
+  verifies unchanged.
 - **Never push directly to `master` or force-push.**
 - **Never commit `.env` files, private keys, or credentials.** `*.key`, `*.pem`, `*.p8`,
   `*.p12` are in `.gitignore`; keep them there.
@@ -92,9 +92,14 @@ Stopping to ask is always correct. Guessing on security-critical code is not.
   pass before a PR opens.
 - Errors via `thiserror` in `src/error.rs` with a descriptive message. No `unwrap()` or
   `expect()` in library code except inside `#[cfg(test)]` blocks.
-- **Algorithm dispatch:** `alg` field on messages. Default `ed25519` so old messages
-  verify without it. New algorithms add a variant — they never replace `ed25519`.
-- **Public key format:** `<alg>:<hex>` (e.g. `ed25519:abc123…`, `p256:def456…`) so a
-  key is never silently read as the wrong type.
+- **Algorithm dispatch:** the algorithm lives in the key itself, never in a separate
+  field, so a key and its type cannot come apart. `PublicKey::from_wire` (`src/key.rs`)
+  reads it. New algorithms add a variant and a prefix — they never replace `ed25519`.
+- **Public key format:** wire form (`author`) is bare hex for Ed25519 (unchanged since
+  v0.1) and `<alg>:<hex>` for everything else (`p256:…`). Display form always carries the
+  prefix (`ed25519:…`, `p256:…`). One wire spelling per key: `ed25519:` on the wire,
+  unknown prefixes and uppercase P-256 hex are rejected.
+- **Shared vectors:** `test-vectors/*.json` are the cross-language source of truth. Rust
+  and JS verifiers must agree on every case.
 - **Stages map to branches.** Work on `docs/HARDWARE_KEYS_PLAN.md` Stage N goes on a
   branch named `stage<N>/…` so progress is traceable.

@@ -1,0 +1,104 @@
+{
+  "description": "SignedMessage verification vectors. Every implementation (Rust, JS) must agree on `valid` for every case. Signatures are over the UTF-8 bytes of the Blake3 hex string (content_hash), never the raw content. `author` with no prefix is Ed25519; `p256:` prefix is ECDSA P-256 (SHA-256, 33-byte compressed key, 64-byte r||s, low-S only).",
+  "keys": {
+    "ed25519_private_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+    "p256_private_hex": "0909090909090909090909090909090909090909090909090909090909090909"
+  },
+  "cases": [
+    {
+      "name": "ed25519_legacy",
+      "note": "Signed by the code before Stage 1. Must keep verifying forever.",
+      "valid": true,
+      "message": {
+        "author": "ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
+        "content": "front desk check-in: ticket 0001",
+        "content_hash": "24a46c2be8f937d7fe1413adfe1216abc6795bc1345e340cb44974423cc5f726",
+        "signature": "75111cb5df5c3e672744f2b5a95933773d1d75cf83999f4f728b17fbf4d7bcc65696951480b5b8555fc12d549f499becca900665ce5fa39e2a7eba7764c9ea0b"
+      }
+    },
+    {
+      "name": "p256_valid",
+      "valid": true,
+      "message": {
+        "author": "p256:027135fa4fd93a09dce98bbf681b4bfcf50e7c0d6354e62afb0bff2a3429617865",
+        "content": "front desk check-in: ticket 0002",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada822147961eaf68c41c3dc0971e214b54e36e4f46d000353c8787c8d5719c1246efc721f"
+      }
+    },
+    {
+      "name": "p256_high_s",
+      "note": "Same signature with s replaced by n - s. Mathematically valid ECDSA, rejected so a message has exactly one valid signature.",
+      "valid": false,
+      "message": {
+        "author": "p256:027135fa4fd93a09dce98bbf681b4bfcf50e7c0d6354e62afb0bff2a3429617865",
+        "content": "front desk check-in: ticket 0002",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada82214799e150972be3c23f78e1deb4ab1c91b0b4fe6f759de9f21f79ca0099e8d66b332"
+      }
+    },
+    {
+      "name": "p256_tampered_content",
+      "valid": false,
+      "message": {
+        "author": "p256:027135fa4fd93a09dce98bbf681b4bfcf50e7c0d6354e62afb0bff2a3429617865",
+        "content": "front desk check-in: ticket 0003",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada822147961eaf68c41c3dc0971e214b54e36e4f46d000353c8787c8d5719c1246efc721f"
+      }
+    },
+    {
+      "name": "p256_key_without_prefix",
+      "note": "A P-256 key with its prefix stripped must not be read as Ed25519.",
+      "valid": false,
+      "message": {
+        "author": "027135fa4fd93a09dce98bbf681b4bfcf50e7c0d6354e62afb0bff2a3429617865",
+        "content": "front desk check-in: ticket 0002",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada822147961eaf68c41c3dc0971e214b54e36e4f46d000353c8787c8d5719c1246efc721f"
+      }
+    },
+    {
+      "name": "ed25519_key_labelled_p256",
+      "valid": false,
+      "message": {
+        "author": "p256:ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
+        "content": "front desk check-in: ticket 0001",
+        "content_hash": "24a46c2be8f937d7fe1413adfe1216abc6795bc1345e340cb44974423cc5f726",
+        "signature": "75111cb5df5c3e672744f2b5a95933773d1d75cf83999f4f728b17fbf4d7bcc65696951480b5b8555fc12d549f499becca900665ce5fa39e2a7eba7764c9ea0b"
+      }
+    },
+    {
+      "name": "ed25519_prefixed_on_wire",
+      "note": "On the wire an Ed25519 author is always bare hex, so there is one spelling per key. `ed25519:` is the display form only.",
+      "valid": false,
+      "message": {
+        "author": "ed25519:ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
+        "content": "front desk check-in: ticket 0001",
+        "content_hash": "24a46c2be8f937d7fe1413adfe1216abc6795bc1345e340cb44974423cc5f726",
+        "signature": "75111cb5df5c3e672744f2b5a95933773d1d75cf83999f4f728b17fbf4d7bcc65696951480b5b8555fc12d549f499becca900665ce5fa39e2a7eba7764c9ea0b"
+      }
+    },
+    {
+      "name": "p256_uppercase_hex",
+      "note": "P-256 keys are lowercase hex only, so there is one spelling per key.",
+      "valid": false,
+      "message": {
+        "author": "p256:027135FA4FD93A09DCE98BBF681B4BFCF50E7C0D6354E62AFB0BFF2A3429617865",
+        "content": "front desk check-in: ticket 0002",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada822147961eaf68c41c3dc0971e214b54e36e4f46d000353c8787c8d5719c1246efc721f"
+      }
+    },
+    {
+      "name": "unknown_algorithm",
+      "valid": false,
+      "message": {
+        "author": "rsa:027135fa4fd93a09dce98bbf681b4bfcf50e7c0d6354e62afb0bff2a3429617865",
+        "content": "front desk check-in: ticket 0002",
+        "content_hash": "85252295e3112100e39f7987ee567508417cffcd0302531feb8b38061ccfef79",
+        "signature": "05e850e65dc934e47561b45eae6f6c35c874680b33df73de0517e6ada822147961eaf68c41c3dc0971e214b54e36e4f46d000353c8787c8d5719c1246efc721f"
+      }
+    }
+  ]
+}

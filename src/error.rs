@@ -5,6 +5,9 @@ pub enum KeystoneError {
     #[error("Invalid signature")]
     InvalidSignature,
 
+    #[error("Unsupported key algorithm: {0}")]
+    UnsupportedAlgorithm(String),
+
     #[error("Invalid public key: {0}")]
     InvalidPublicKey(String),
 

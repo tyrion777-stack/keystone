@@ -63,6 +63,11 @@ Any piece of content can be signed. The signature proves:
 > Python, or any other language, sign and verify the hex string's bytes,
 > not the original content's bytes. Getting this wrong produces a valid-looking
 > flow that fails verification with no obvious error.
+>
+> **Two key types.** An `author` of bare hex is Ed25519. An `author` starting
+> `p256:` is ECDSA P-256 (the curve phone hardware and passkeys use): SHA-256,
+> 33-byte compressed key, 64-byte `r || s` signature, low-S only. Shared test
+> vectors for both are in `test-vectors/signed_message.json`.
 
 ```rust
 use keystone_core::Identity;
