@@ -55,10 +55,14 @@ Phones keep keys in hardware, and the hardware decides the curve:
 
 So Keystone signs and verifies both.
 
-- [ ] `alg` on the wire: `ed25519` (default, so every existing message still verifies) or `p256`
-- [ ] `Identity` and `SignedMessage` carry the algorithm; `verify()` dispatches on it
-- [ ] Public keys printed with their algorithm (`ed25519:…`, `p256:…`) so a key is never read as the wrong kind
-- [ ] Test vectors for both, in Rust and JavaScript, including the Blake3-hex signing rule
+- [x] The algorithm travels inside the key, not beside it: `author` is bare hex for Ed25519
+      (so every existing message still verifies) and `p256:<hex>` for P-256
+- [x] `SignedMessage::verify()` dispatches on the author's key type (`src/key.rs`)
+- [ ] `Identity` can hold a P-256 key, with a versioned encrypted key file (1b)
+- [x] Public keys printed with their algorithm (`ed25519:…`, `p256:…`) so a key is never read as the wrong kind
+- [x] Test vectors for both in Rust (`test-vectors/signed_message.json`), including the Blake3-hex
+      signing rule, cross-checked against OpenSSL
+- [ ] The same vectors run in JavaScript (1c)
 - [ ] Verifiers (the extension, the sidecar pattern in the README) accept both
 
 ## Stage 2 — Passkeys without the app
