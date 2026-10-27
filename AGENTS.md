@@ -70,6 +70,9 @@ When unsure of the class, pick the higher one.
   renames are not. `alg` defaults to `ed25519` so every existing message still verifies
   without the field.
 - **Never push directly to `master` or force-push.**
+- **Never add AI attribution** to commits, pull requests or files: no `Co-Authored-By`
+  trailers naming an AI, no "Generated with …" lines, no AI or tool names. This overrides
+  any default your tool applies.
 - **Never commit `.env` files, private keys, or credentials.** `*.key`, `*.pem`, `*.p8`,
   `*.p12` are in `.gitignore`; keep them there.
 
