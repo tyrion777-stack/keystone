@@ -12,10 +12,10 @@ use std::{
 use futures::StreamExt;
 use keystone_core::{
     content::{ContentRecord, ContentStore},
-    network::{build_swarm, KeystoneBehaviourEvent},
+    network::{KeystoneBehaviourEvent, build_swarm},
     protocol::{ChunkRequest, ChunkResponse},
 };
-use libp2p::{request_response, swarm::SwarmEvent, Multiaddr};
+use libp2p::{Multiaddr, request_response, swarm::SwarmEvent};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -26,18 +26,21 @@ static RUN_ID: AtomicUsize = AtomicUsize::new(0);
 
 const TRIALS: usize = 3;
 const SIZES: &[(usize, &str)] = &[
-    (100_000,    "100 KB"),
-    (1_000_000,  "1 MB"),
+    (100_000, "100 KB"),
+    (1_000_000, "1 MB"),
     (10_000_000, "10 MB"),
     (50_000_000, "50 MB"),
 ];
 
-const TCP_ADDR:  &str = "/ip4/127.0.0.1/tcp/0";
+const TCP_ADDR: &str = "/ip4/127.0.0.1/tcp/0";
 const QUIC_ADDR: &str = "/ip4/127.0.0.1/udp/0/quic-v1";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\nKeystone transport benchmark (loopback, {} trials/size, median)", TRIALS);
+    println!(
+        "\nKeystone transport benchmark (loopback, {} trials/size, median)",
+        TRIALS
+    );
     println!("TCP  = TCP + Noise + Yamux + CBOR");
     println!("QUIC = QUIC (TLS built-in, native streams) + CBOR");
     println!("HTTP = plain TCP, no TLS\n");
@@ -51,17 +54,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for &(size, label) in SIZES {
         let data: Vec<u8> = (0u8..=255).cycle().take(size).collect();
 
-        let mut tcp_times:  Vec<Duration> = Vec::new();
+        let mut tcp_times: Vec<Duration> = Vec::new();
         let mut quic_times: Vec<Duration> = Vec::new();
         let mut http_times: Vec<Duration> = Vec::new();
 
         for t in 0..TRIALS {
             print!("  {} trial {}/{}  ", label, t + 1, TRIALS);
-            let tcp  = bench_keystone(&data, TCP_ADDR).await?;
+            let tcp = bench_keystone(&data, TCP_ADDR).await?;
             let quic = bench_keystone(&data, QUIC_ADDR).await?;
             let http = bench_http(&data).await?;
-            println!("tcp={}ms  quic={}ms  http={}ms",
-                tcp.as_millis(), quic.as_millis(), http.as_millis());
+            println!(
+                "tcp={}ms  quic={}ms  http={}ms",
+                tcp.as_millis(),
+                quic.as_millis(),
+                http.as_millis()
+            );
             tcp_times.push(tcp);
             quic_times.push(quic);
             http_times.push(http);
@@ -70,14 +77,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tcp_times.sort();
         quic_times.sort();
         http_times.sort();
-        let tcp  = tcp_times[TRIALS / 2];
+        let tcp = tcp_times[TRIALS / 2];
         let quic = quic_times[TRIALS / 2];
         let http = http_times[TRIALS / 2];
 
-        let tcp_mbs  = size as f64 / tcp.as_secs_f64()  / 1_000_000.0;
+        let tcp_mbs = size as f64 / tcp.as_secs_f64() / 1_000_000.0;
         let quic_mbs = size as f64 / quic.as_secs_f64() / 1_000_000.0;
         let http_mbs = size as f64 / http.as_secs_f64() / 1_000_000.0;
-        let ratio    = quic_mbs / tcp_mbs * 100.0;
+        let ratio = quic_mbs / tcp_mbs * 100.0;
 
         println!(
             "{:<10}  {:>12}  {:>12}  {:>12}  {:>7.0}%",
@@ -98,7 +105,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Two in-process swarms connected over loopback on the given transport address.
 // Times from swarm.dial() call to Blake3 verify_complete().
 
-async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<dyn std::error::Error>> {
+async fn bench_keystone(
+    data: &[u8],
+    listen_addr: &str,
+) -> Result<Duration, Box<dyn std::error::Error>> {
     let id = RUN_ID.fetch_add(1, Ordering::SeqCst);
     let pub_dir = format!("/tmp/ks_bench_{id}_pub");
     let fet_dir = format!("/tmp/ks_bench_{id}_fet");
@@ -108,7 +118,7 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
 
     let (addr_tx, addr_rx) = oneshot::channel::<Multiaddr>();
 
-    let pub_dir2    = pub_dir.clone();
+    let pub_dir2 = pub_dir.clone();
     let listen_addr = listen_addr.to_string();
 
     let pub_task = tokio::spawn(async move {
@@ -125,7 +135,10 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                 }
                 SwarmEvent::Behaviour(KeystoneBehaviourEvent::Chunks(
                     request_response::Event::Message {
-                        message: request_response::Message::Request { request, channel, .. },
+                        message:
+                            request_response::Message::Request {
+                                request, channel, ..
+                            },
                         ..
                     },
                 )) => {
@@ -145,7 +158,11 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                             data: None,
                         },
                     };
-                    swarm.behaviour_mut().chunks.send_response(channel, resp).ok();
+                    swarm
+                        .behaviour_mut()
+                        .chunks
+                        .send_response(channel, resp)
+                        .ok();
                 }
                 _ => {}
             }
@@ -168,7 +185,10 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                 pub_peer = Some(peer_id);
                 swarm.behaviour_mut().chunks.send_request(
                     &peer_id,
-                    ChunkRequest { hash: hash.clone(), chunk_index: 0 },
+                    ChunkRequest {
+                        hash: hash.clone(),
+                        chunk_index: 0,
+                    },
                 );
             }
 
@@ -178,7 +198,13 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                     ..
                 },
             )) => {
-                let ChunkResponse { hash: h, chunk_index, total_size, chunk_size, data } = response;
+                let ChunkResponse {
+                    hash: h,
+                    chunk_index,
+                    total_size,
+                    chunk_size,
+                    data,
+                } = response;
                 if let Some(bytes) = data {
                     if active.is_none() {
                         let rec = fet_store.begin_fetch(&h, total_size, chunk_size)?;
@@ -189,7 +215,10 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                             for i in 1..n as u64 {
                                 swarm.behaviour_mut().chunks.send_request(
                                     &p,
-                                    ChunkRequest { hash: h.clone(), chunk_index: i },
+                                    ChunkRequest {
+                                        hash: h.clone(),
+                                        chunk_index: i,
+                                    },
                                 );
                             }
                         }
@@ -198,7 +227,10 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
                     fet_store.write_chunk(rec, chunk_index, &bytes)?;
                     if rec.is_complete() {
                         let elapsed = start.elapsed();
-                        assert!(fet_store.verify_complete(rec)?, "Blake3 mismatch in benchmark");
+                        assert!(
+                            fet_store.verify_complete(rec)?,
+                            "Blake3 mismatch in benchmark"
+                        );
                         fet_store.finish_fetch(rec);
                         break elapsed;
                     }
@@ -223,7 +255,7 @@ async fn bench_keystone(data: &[u8], listen_addr: &str) -> Result<Duration, Box<
 
 async fn bench_http(data: &[u8]) -> Result<Duration, Box<dyn std::error::Error>> {
     let body = data.to_vec();
-    let len  = body.len();
+    let len = body.len();
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let port = listener.local_addr()?.port();
 
@@ -242,7 +274,8 @@ async fn bench_http(data: &[u8]) -> Result<Duration, Box<dyn std::error::Error>>
 
     let start = std::time::Instant::now();
     let mut conn = TcpStream::connect(("127.0.0.1", port)).await?;
-    conn.write_all(b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n").await?;
+    conn.write_all(b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        .await?;
 
     let mut raw: Vec<u8> = Vec::with_capacity(len + 64);
     let mut buf = vec![0u8; 65536];
@@ -250,15 +283,19 @@ async fn bench_http(data: &[u8]) -> Result<Duration, Box<dyn std::error::Error>>
 
     loop {
         let n = conn.read(&mut buf).await?;
-        if n == 0 { break; }
-        raw.extend_from_slice(&buf[..n]);
-        if body_start.is_none() {
-            if let Some(p) = raw.windows(4).position(|w| w == b"\r\n\r\n") {
-                body_start = Some(p + 4);
-            }
+        if n == 0 {
+            break;
         }
-        if let Some(bs) = body_start {
-            if raw.len().saturating_sub(bs) >= len { break; }
+        raw.extend_from_slice(&buf[..n]);
+        if body_start.is_none()
+            && let Some(p) = raw.windows(4).position(|w| w == b"\r\n\r\n")
+        {
+            body_start = Some(p + 4);
+        }
+        if let Some(bs) = body_start
+            && raw.len().saturating_sub(bs) >= len
+        {
+            break;
         }
     }
 

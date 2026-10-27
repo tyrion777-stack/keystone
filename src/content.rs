@@ -18,9 +18,13 @@ pub const MAX_CHUNKS: usize = 65_536;
 /// Chunk size is decided once from the file size and stored in the ContentRecord.
 /// Larger files get larger chunks to keep the request count manageable.
 pub fn calc_chunk_size(file_size: u64) -> u64 {
-    if file_size > 100 * MB      { 4 * MB }
-    else if file_size > 25 * MB  { 2 * MB }
-    else                         { 512 * KB }
+    if file_size > 100 * MB {
+        4 * MB
+    } else if file_size > 25 * MB {
+        2 * MB
+    } else {
+        512 * KB
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,14 +45,18 @@ pub struct ContentRecord {
 
 impl ContentRecord {
     pub fn pending_chunks(&self) -> Vec<u64> {
-        self.chunks.iter().enumerate()
+        self.chunks
+            .iter()
+            .enumerate()
             .filter(|(_, s)| matches!(s, ChunkState::Pending))
             .map(|(i, _)| i as u64)
             .collect()
     }
 
     pub fn is_complete(&self) -> bool {
-        self.chunks.iter().all(|s| matches!(s, ChunkState::Complete))
+        self.chunks
+            .iter()
+            .all(|s| matches!(s, ChunkState::Complete))
     }
 }
 
@@ -70,9 +78,10 @@ pub struct ContentStore {
 
 impl ContentStore {
     pub fn new<P: AsRef<Path>>(dir: P) -> Result<Self, KeystoneError> {
-        std::fs::create_dir_all(&dir)
-            .map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
-        Ok(Self { dir: dir.as_ref().to_path_buf() })
+        std::fs::create_dir_all(&dir).map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
+        Ok(Self {
+            dir: dir.as_ref().to_path_buf(),
+        })
     }
 
     /// Hash bytes, save to disk, return the hex hash. Idempotent — skips write
@@ -81,8 +90,7 @@ impl ContentStore {
         let hash = hex::encode(blake3::hash(bytes).as_bytes());
         let path = self.dir.join(&hash);
         if !path.exists() {
-            std::fs::write(&path, bytes)
-                .map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
+            std::fs::write(&path, bytes).map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
         }
         Ok(hash)
     }
@@ -112,7 +120,9 @@ impl ContentStore {
         let total_size = self.file_size(hash)?;
         let chunk_size = calc_chunk_size(total_size);
         let offset = chunk_index * chunk_size;
-        if offset >= total_size { return None; }
+        if offset >= total_size {
+            return None;
+        }
 
         let mut file = std::fs::File::open(self.dir.join(hash)).ok()?;
         file.seek(SeekFrom::Start(offset)).ok()?;
@@ -130,7 +140,12 @@ impl ContentStore {
     /// Start a chunked fetch. Pre-allocates the full file on disk immediately
     /// so chunks can be written at their seek positions in any order.
     /// Resumes an existing in-progress fetch if a .meta sidecar already exists.
-    pub fn begin_fetch(&self, hash: &str, total_size: u64, chunk_size: u64) -> Result<ContentRecord, KeystoneError> {
+    pub fn begin_fetch(
+        &self,
+        hash: &str,
+        total_size: u64,
+        chunk_size: u64,
+    ) -> Result<ContentRecord, KeystoneError> {
         validate_hash(hash)?;
         if chunk_size == 0 || chunk_size > MAX_CHUNK_SIZE {
             return Err(KeystoneError::InvalidChunk(format!(
@@ -142,7 +157,7 @@ impl ContentStore {
                 "total_size {total_size} exceeds limit {MAX_TOTAL_SIZE}"
             )));
         }
-        let num_chunks = (total_size + chunk_size - 1) / chunk_size;
+        let num_chunks = total_size.div_ceil(chunk_size);
         if num_chunks > MAX_CHUNKS as u64 {
             return Err(KeystoneError::InvalidChunk(format!(
                 "num_chunks {num_chunks} exceeds limit {MAX_CHUNKS}"
@@ -172,17 +187,27 @@ impl ContentStore {
     }
 
     /// Write one chunk at its correct offset and mark it Complete in the record.
-    pub fn write_chunk(&self, record: &mut ContentRecord, chunk_index: u64, data: &[u8]) -> Result<(), KeystoneError> {
+    pub fn write_chunk(
+        &self,
+        record: &mut ContentRecord,
+        chunk_index: u64,
+        data: &[u8],
+    ) -> Result<(), KeystoneError> {
         let idx = usize::try_from(chunk_index)
             .ok()
             .filter(|&i| i < record.chunks.len())
-            .ok_or_else(|| KeystoneError::InvalidChunk(format!(
-                "chunk_index {chunk_index} out of bounds (len={})", record.chunks.len()
-            )))?;
+            .ok_or_else(|| {
+                KeystoneError::InvalidChunk(format!(
+                    "chunk_index {chunk_index} out of bounds (len={})",
+                    record.chunks.len()
+                ))
+            })?;
 
         if data.len() > record.chunk_size as usize {
             return Err(KeystoneError::InvalidChunk(format!(
-                "data len {} exceeds chunk_size {}", data.len(), record.chunk_size
+                "data len {} exceeds chunk_size {}",
+                data.len(),
+                record.chunk_size
             )));
         }
         // Every chunk except the last must be exactly chunk_size bytes.
@@ -190,11 +215,13 @@ impl ContentStore {
         if !is_last && data.len() != record.chunk_size as usize {
             return Err(KeystoneError::InvalidChunk(format!(
                 "non-final chunk {chunk_index} has len {} but chunk_size is {}",
-                data.len(), record.chunk_size
+                data.len(),
+                record.chunk_size
             )));
         }
 
-        let offset = chunk_index.checked_mul(record.chunk_size)
+        let offset = chunk_index
+            .checked_mul(record.chunk_size)
             .ok_or_else(|| KeystoneError::InvalidChunk("chunk offset overflow".to_string()))?;
 
         let mut file = std::fs::OpenOptions::new()
@@ -235,10 +262,9 @@ impl ContentStore {
 
     fn save_meta(&self, record: &ContentRecord) -> Result<(), KeystoneError> {
         let path = self.dir.join(format!("{}.meta", record.hash));
-        let json = serde_json::to_vec(record)
-            .map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
-        std::fs::write(path, json)
-            .map_err(|e| KeystoneError::KeyStorage(e.to_string()))
+        let json =
+            serde_json::to_vec(record).map_err(|e| KeystoneError::KeyStorage(e.to_string()))?;
+        std::fs::write(path, json).map_err(|e| KeystoneError::KeyStorage(e.to_string()))
     }
 }
 
@@ -252,7 +278,9 @@ mod tests {
     use super::*;
     use std::env::temp_dir;
 
-    fn tmp(name: &str) -> PathBuf { temp_dir().join(name) }
+    fn tmp(name: &str) -> PathBuf {
+        temp_dir().join(name)
+    }
 
     #[test]
     fn store_and_retrieve() {
@@ -294,9 +322,9 @@ mod tests {
 
     #[test]
     fn calc_chunk_size_tiers() {
-        assert_eq!(calc_chunk_size(1),               512 * KB);
-        assert_eq!(calc_chunk_size(26 * MB),         2 * MB);
-        assert_eq!(calc_chunk_size(101 * MB),        4 * MB);
+        assert_eq!(calc_chunk_size(1), 512 * KB);
+        assert_eq!(calc_chunk_size(26 * MB), 2 * MB);
+        assert_eq!(calc_chunk_size(101 * MB), 4 * MB);
     }
 
     #[test]
@@ -363,7 +391,10 @@ mod tests {
     #[test]
     fn validate_hash_rejects_uppercase_hex() {
         // 64 chars but uppercase — not canonical lowercase hex
-        assert!(validate_hash("ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789").is_err());
+        assert!(
+            validate_hash("ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789")
+                .is_err()
+        );
     }
 
     #[test]
@@ -416,7 +447,11 @@ mod tests {
     fn begin_fetch_rejects_chunk_size_over_cap() {
         let dir = tmp("ks_cb2");
         let store = ContentStore::new(&dir).unwrap();
-        assert!(store.begin_fetch(&valid_hash(), 1024, MAX_CHUNK_SIZE + 1).is_err());
+        assert!(
+            store
+                .begin_fetch(&valid_hash(), 1024, MAX_CHUNK_SIZE + 1)
+                .is_err()
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -424,7 +459,11 @@ mod tests {
     fn begin_fetch_rejects_total_size_over_cap() {
         let dir = tmp("ks_cb3");
         let store = ContentStore::new(&dir).unwrap();
-        assert!(store.begin_fetch(&valid_hash(), MAX_TOTAL_SIZE + 1, 512 * KB).is_err());
+        assert!(
+            store
+                .begin_fetch(&valid_hash(), MAX_TOTAL_SIZE + 1, 512 * KB)
+                .is_err()
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -433,7 +472,11 @@ mod tests {
         let dir = tmp("ks_cb4");
         let store = ContentStore::new(&dir).unwrap();
         // chunk_size=1 (valid), total_size=MAX_CHUNKS+1 → num_chunks = MAX_CHUNKS+1
-        assert!(store.begin_fetch(&valid_hash(), MAX_CHUNKS as u64 + 1, 1).is_err());
+        assert!(
+            store
+                .begin_fetch(&valid_hash(), MAX_CHUNKS as u64 + 1, 1)
+                .is_err()
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 

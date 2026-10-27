@@ -13,11 +13,11 @@
 // transfer. The blob itself carries the plaintext hash for post-decrypt verification.
 
 use aes_gcm::{
-    aead::{Aead, KeyInit},
     Aes256Gcm, Key, Nonce,
+    aead::{Aead, KeyInit},
 };
 use hkdf::Hkdf;
-use rand::{rngs::OsRng, RngCore};
+use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
@@ -52,7 +52,10 @@ pub struct EncryptedBlob {
 
 /// Encrypt `data` for one or more recipients. Returns the blob ready to be
 /// stored in a ContentStore (Blake3-hash of the serialised blob becomes its address).
-pub fn encrypt_for(data: &[u8], recipients: &[X25519PublicKey]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+pub fn encrypt_for(
+    data: &[u8],
+    recipients: &[X25519PublicKey],
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     // Step 1 — random content key + nonce
     let mut content_key = [0u8; 32];
     let mut content_nonce = [0u8; 12];
@@ -114,8 +117,8 @@ pub fn decrypt(blob_bytes: &[u8], identity: &Identity) -> Option<Vec<u8>> {
 
     // Find the slot for this identity by trying each one
     for slot in &blob.recipients {
-        let ephemeral_pubkey_bytes: [u8; 32] = hex::decode(&slot.ephemeral_pubkey)
-            .ok()?.try_into().ok()?;
+        let ephemeral_pubkey_bytes: [u8; 32] =
+            hex::decode(&slot.ephemeral_pubkey).ok()?.try_into().ok()?;
         let ephemeral_pubkey = X25519PublicKey::from(ephemeral_pubkey_bytes);
 
         let shared_secret = my_secret.diffie_hellman(&ephemeral_pubkey);
@@ -125,8 +128,7 @@ pub fn decrypt(blob_bytes: &[u8], identity: &Identity) -> Option<Vec<u8>> {
             .expand(b"keystone-content-key", &mut wrapping_key)
             .ok()?;
 
-        let key_nonce_bytes: [u8; 12] = hex::decode(&slot.key_nonce)
-            .ok()?.try_into().ok()?;
+        let key_nonce_bytes: [u8; 12] = hex::decode(&slot.key_nonce).ok()?.try_into().ok()?;
 
         let wrap_cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&wrapping_key));
         let content_key = match wrap_cipher.decrypt(
@@ -138,11 +140,13 @@ pub fn decrypt(blob_bytes: &[u8], identity: &Identity) -> Option<Vec<u8>> {
         };
 
         // Decrypt the content
-        let content_nonce_bytes: [u8; 12] = hex::decode(&blob.nonce)
-            .ok()?.try_into().ok()?;
+        let content_nonce_bytes: [u8; 12] = hex::decode(&blob.nonce).ok()?.try_into().ok()?;
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&content_key));
         let plaintext = cipher
-            .decrypt(Nonce::from_slice(&content_nonce_bytes), blob.ciphertext.as_ref())
+            .decrypt(
+                Nonce::from_slice(&content_nonce_bytes),
+                blob.ciphertext.as_ref(),
+            )
             .ok()?;
 
         // Verify plaintext hash
@@ -196,7 +200,8 @@ mod tests {
         let alice = Identity::generate();
         let bob = Identity::generate();
         let data = b"both can read this";
-        let blob = encrypt_for(data, &[alice.x25519_public_key(), bob.x25519_public_key()]).unwrap();
+        let blob =
+            encrypt_for(data, &[alice.x25519_public_key(), bob.x25519_public_key()]).unwrap();
         assert_eq!(decrypt(&blob, &alice).unwrap(), data);
         assert_eq!(decrypt(&blob, &bob).unwrap(), data);
     }
