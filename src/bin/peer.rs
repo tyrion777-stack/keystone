@@ -88,12 +88,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 KeystoneBehaviourEvent::Kad(kad::Event::OutboundQueryProgressed {
-                    result: kad::QueryResult::Bootstrap(Ok(kad::BootstrapOk { num_remaining, .. })),
+                    result:
+                        kad::QueryResult::Bootstrap(Ok(kad::BootstrapOk {
+                            num_remaining: 0, ..
+                        })),
                     ..
                 }) => {
-                    if num_remaining == 0 {
-                        println!("[✓] Bootstrap complete — routing table populated");
-                    }
+                    println!("[✓] Bootstrap complete — routing table populated");
                 }
                 _ => {}
             },
