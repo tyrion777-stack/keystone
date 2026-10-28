@@ -1,0 +1,526 @@
+{
+  "description": "Signed service requests and approvals (stage 3). Signed with OpenSSL Ed25519/P-256 and Python blake3, independently of the Rust verifier. `now` is the verifier's clock in unix seconds. Every implementation must agree on `valid`, and on `person` where given.",
+  "cases": [
+    {
+      "name": "valid_check_in",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      }
+    },
+    {
+      "name": "valid_link",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"link\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "eae1557c36d48a1d1fa941dc1c8faaa2e5f926c8420e343e4639dd0feff86968",
+        "signature": "e4ea036a9a0d1438707ee696a81d0502b678a079fbfd1160a0fea5e383e95b0a28129adef92127a73580410e88372361bedf284a18fb69d7054d78b404e64d0c"
+      }
+    },
+    {
+      "name": "valid_sign",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"sign\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110,\"payload\":\"I confirm my address is unchanged.\"}",
+        "content_hash": "dffeb01e72e59985dcb0d381d6f93b48fb8d435c08c326de767b7b5b3681fcda",
+        "signature": "a577efa6473e764f256a5545d5120d7604c6469ac31a492dd7a751f319fa42a73a5709024cd66854075823ad664d43ad0415679ca1d737b595773608a58e460d"
+      }
+    },
+    {
+      "name": "valid_localhost_origin",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"http://localhost:8765\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "33e45ede0a569cefa3ea403d478e0e762d04e16b3ea7150160ad51f639936ebe",
+        "signature": "43746f2e5c9c4c09da2491d54787b49a18a4727c83066efea59d42546bc1cdd0e32c5f5c5b5d62323e75a04b4ec264db715d919b1fac504c8695e88e19e6cb00"
+      }
+    },
+    {
+      "name": "valid_p256_service_key",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "p256:038ffb7a2eaeaaf7931c1fb21192b737b39290fec6f055df4a35fd5e55c87a94ce",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "58a1dc50a98383f4736a53a21c39f63a39dfe0ee9f8b0578d0dac39c29deb64b5b437e1d6f25e31647e9acf885f31325f66e2885f7abccc74f11302d3ce45e04"
+      },
+      "note": "A service may sign with a device key."
+    },
+    {
+      "name": "valid_unicode_name",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"R\\u00e9ception\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "ad8ee625a94fae8a43e3d33e18707d5895f9e0ed60d6802ef854495a9a385b08",
+        "signature": "294aac0c3d632dad25174ff4ed473ef98e3ffa7f3cdb6adc04e56df79469d17e5068f6e63f81412aacb69700b99365c827ed7d00f958c70fa6489481f48c3209"
+      }
+    },
+    {
+      "name": "valid_issued_within_clock_skew",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1800000030,\"expires_at\":1800000150}",
+        "content_hash": "c3296f3d88464d37c1872cbaf7340361f3a451d6894556f44b19a985c1faf60e",
+        "signature": "d9a3698a49a7db269bb18b7687897d1328207ad5451ad3dc50c6f17769e22b7def09ccd6aa740e2e52a0c3ddee9003a7f841014b6c37b596284aae45f7cc840f"
+      }
+    },
+    {
+      "name": "valid_expired_within_clock_skew",
+      "kind": "request",
+      "valid": true,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999800,\"expires_at\":1799999970}",
+        "content_hash": "5e60b0cc20907c200679ad18f805d433067d86aec6144a4d0c3a3eacd9261e15",
+        "signature": "d8d28c72c2e0a0fcde2b260bb4298ec690e8c32446bc95d3d0edf5e9db167bf506b1e6ea1e97fc9b9cb4de7ec3129ed30953222113ea0e3e6f31cad497b0f00a"
+      }
+    },
+    {
+      "name": "expired",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999800,\"expires_at\":1799999940}",
+        "content_hash": "fe486942595a708cf227e6af0c0f69df0ce4b0969a329f78249f5e1a8619d843",
+        "signature": "fe512967cd47fc9547c31913dfc808fb5c49f1f7e22f82435a9dc656ff8b52ea5b28d5b73821fe70b29671cd04be4f70f05e0613b20e3b5cd6a2a142aedfcf08"
+      }
+    },
+    {
+      "name": "issued_in_the_future",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1800000061,\"expires_at\":1800000180}",
+        "content_hash": "6a8c9c87d4bde2d3ab7e376a0f42f6dd6dce0bda68523222f3c85ff5451f27f0",
+        "signature": "d7e1ede44c5127e922a4bd30a3d8b23f5f452df144b61f06f3910e77b55560206e4b743fe1ee37e5ea09561772fbb4fa56354259fb8f1a8977328601b8212a04"
+      }
+    },
+    {
+      "name": "lifetime_too_long",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000591}",
+        "content_hash": "ba16a2fee8644b9d53bd4b2cea7f4b683e0b691e7b592c9da7466e1ba32883a9",
+        "signature": "a7d4215dc8e0a5858610d43cda0b3e85a0989b6405a4a424bf2c698a2a589a04b609ccc97964166c26c469c973b9b5e0c99544753b587fce74f95a0c7578eb06"
+      }
+    },
+    {
+      "name": "expires_before_issued",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1800000000,\"expires_at\":1800000000}",
+        "content_hash": "e103556014451434e141c1b228e06144febcb730016887eba74adb48a911a000",
+        "signature": "80a9346e5a49840926047fbf5dc4a2c6e22a0e898074836d009097c3d3279c129f565fc9051da2252fe830c2d3e91c3f55d8dc76731a98ab973ab839374dd204"
+      }
+    },
+    {
+      "name": "unknown_field",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110,\"redirect\":\"https://other.example.com\"}",
+        "content_hash": "2f16403073a73a426bb45721b9194335ad74c10cc39ae792cd82a369e39d1978",
+        "signature": "e0ed7b7d3f445c2f6eff8538d0ad2b7e5f9db4cd182229eb95600fcc9263829ad8c6026245249ba4c24d15e917823caebc72bce84a35bea32fa80b0be0735d04"
+      }
+    },
+    {
+      "name": "duplicate_field",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110,\"purpose\":\"sign\"}",
+        "content_hash": "d51625ba90fff72c80bc1af0ed1063e96938dcb03b95f17f631de47139a85aef",
+        "signature": "6445121f8b6c52fb6c429cf7c312ad0a9bcae2dfa28367d8e1456a60ccc0aefe600987097405a3a88d0f05ab5761d4a846ed675411442426f6e87ae4ac9f5200"
+      },
+      "note": "A second purpose must not override the first."
+    },
+    {
+      "name": "wrong_kind",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "5b85e6c8bae4e9dd9c70145538b073cebc548c9d19fd1b975c1f16279ea3ee94",
+        "signature": "a5b833f39ac838d8ca3a209b3ad6dfd59b5942c594bd93afe98831b833697a87b41099994889f873c0d011d4f13b08fe804a93d53744f8f8bfb0de15695a1607"
+      }
+    },
+    {
+      "name": "wrong_version",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":2,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "90903c85ddd4e7c926047706a1595ca47ad9b12d4a169af800bfef6174d38f1e",
+        "signature": "001b087b4a17aa24f1d52f9e4a902a1c566db4ec71e731f322f7264bddd365b437e183e0200f5d67077eeec918a217cd1bfa88356df5cc03f4312c87863f3001"
+      }
+    },
+    {
+      "name": "unknown_purpose",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"pay\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "5d511303788c201049884339452fa9873a68a610e6265f6e3efb59048666fb12",
+        "signature": "ab78095fc85b14347561ea3372eaee41ee0d745404e83a9595f0331b8ceafc012da4f987b90ef7e9f55296a4616f88dd13f8d3f2d3e2d06a5e9cd8b863a17006"
+      }
+    },
+    {
+      "name": "http_origin",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"http://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "ec6b204f77009a4a0d9d63de535710fce0ba4c1a46634258374817279e201ba1",
+        "signature": "9ae163e26e3913991c32a6d18bb4e91bd1f7a5921c4543b580dd6d8164e546504516c48a915897ae89d1a0118bae52077e29fae892381fbb083adfff33b8c205"
+      }
+    },
+    {
+      "name": "origin_with_path",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com/\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "61b829fd18027e00187d641e2c25561e72111b7d02e986a86122af08f25dd415",
+        "signature": "916367586ff253b74a576c3b871deb822ee5dec622f1f44cc4a38f09c5b69c73408ccfe46736cd1e37d3cc778174d4bbb2210633a153a5c1027e94d8172ed005"
+      }
+    },
+    {
+      "name": "origin_uppercase",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://Desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "0639899cc18bcd5b7d72910c286678d1d48d66da8325de0f3f8dc4b46375f9ae",
+        "signature": "99f2f30b2dc26a96f4a16ce8ff0d18f704070e1f3d93c40e2d08e3dd129beab99452dd3566739276cb3dbc7030bf520768983aacd75b32c4edf4d8298196f500"
+      }
+    },
+    {
+      "name": "origin_with_user_info",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com@other.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "384367ffb381f6bdf712f46ab5505810ef059ed39e0337fbea1523656067ffa9",
+        "signature": "298a96b360377153eeb712b19541486d7a2a17337dcdd8c69e28f3c6e0371871d8d39b765e6862fbf198da014b83ed0d7d8b50c3c9db3f92f0ac4be4bef47b05"
+      }
+    },
+    {
+      "name": "origin_bad_port",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com:99999\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "83dcc4f0ee8f2f43124058248ec91a2b9257f48fc8f3fbbbb3ea8b2708936057",
+        "signature": "169d4ac760768ab386f9171ad2d0c38492f0d52c9b4f95a0271602c67466890865fe37e959ad5e4b59e10110373537ea9221d9d64c156b8b1683f1dcb0815a09"
+      }
+    },
+    {
+      "name": "name_with_newline",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\\nVerified\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "a8fb9eeeb443704cc65e96c4aeafad40f42ae8cdeec48e755451a2eb8def5e62",
+        "signature": "b1b97d81e2d1518252057c35511d0c588e8f416586b268a8556cb37d803519541f30c1bbe3b3d81c95ec2c0fb99ef688defe0ceb564de2f1b456e6c63d204507"
+      }
+    },
+    {
+      "name": "name_with_direction_override",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front \\u202eksed\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "19098a07bf666124872c7eb0545b5950db2e335cd09aaf3439c2e7fc8a105eeb",
+        "signature": "a39c8fcd3c0b6d019541e73c6571a3539ad61b7f8a0c03b10a5e53911314ba031a31ec3658c3d86801ebedae91fc959b40527fb754fdf37cd3e0bc13f2a60d04"
+      },
+      "note": "U+202E reverses the text after it on screen."
+    },
+    {
+      "name": "name_too_long",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "86cc46ac3b5e4373affbe070e547c965a85f1bd7848a3b43ae95e48bf08034c6",
+        "signature": "642669dedd39f6e1f750dabfe167179365e8bc3549c123e1ca326f823fc3a97c458beee7ed6446ba15eae1f0aab6681e004269c8b9c91ea42939ffe8f50b5608"
+      }
+    },
+    {
+      "name": "name_with_outer_space",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\" Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "531cad0c4b4c85d3c5eebf41e2460ad64e3d7ddd119172cc1e08a51249c8503d",
+        "signature": "025d8c0af02caf831797e5e4bb0b2a6b58c10e1d4b90dde872d461f819a1b4461d5362f11b4a629e86139b9f1044d9d8f3433b45d567ab0b6ca95943731a9c02"
+      }
+    },
+    {
+      "name": "nonce_too_short",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "1f2474a5d72007aa45197d84bfc88a71a2596abdaac4339a05f6e5f15beb3b81",
+        "signature": "80d84e66a7ad435bdc399ce473e3a1be47a5e128bd84e0de075a26a6f9a957f9b0445ecc8295c07b08c17a1fa2068f2c47e255f0f53371a581290f1630170a0b"
+      }
+    },
+    {
+      "name": "nonce_uppercase",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "91bbc72f704600212d463d6ff8ae6799998bc47f444b1270c32975c26b6660b0",
+        "signature": "76e1294a1b388f9107ead382d3e8a2169f4a4c200091e79d41c60906e0f332ab37dfaae18e090cecd6dc4f1ca31d91a94f0b3ce34427f993b9a55732434f7a0f"
+      }
+    },
+    {
+      "name": "sign_without_payload",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"sign\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "deeecc95cc9b9c2b4918985d473330b528211cd641825799d27a522872054717",
+        "signature": "5cd6b6939c158c7b7e693625f62ea6e323bedae0517aabce7edfe32b040b2d7917e6edf29bad5cfb320abf08c7796833d925534c27b27e2b0e7dfc860dec4904"
+      }
+    },
+    {
+      "name": "check_in_with_payload",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110,\"payload\":\"anything\"}",
+        "content_hash": "48d4ad2cf6e7b5f63734f4e9ae95c2c23d2689b8e64f4af3e4359b481db63d72",
+        "signature": "3f5add4c4e6363466f5c2e9f0df2b0719a56764cc8f090460e691f8b5a110fba9ab33ca84f17a0faf9a53f996dfb7b1f1ba6b068599d1c55e3385724596da30e"
+      }
+    },
+    {
+      "name": "tampered_content",
+      "kind": "request",
+      "valid": false,
+      "now": 1800000000,
+      "signed": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"sign\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110,\"payload\":\"something else\"}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      }
+    },
+    {
+      "name": "approval_valid",
+      "kind": "approval",
+      "valid": true,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\"}",
+        "content_hash": "d14474a09930a9478dc9b79352c10d65b2c2db73a8b7c35ae4c3d4941752bb76",
+        "signature": "754732bbf10bf6bd78351c54484618eeca40fd516752604bd7e80c285def2d1994f13f969d567ab33775e5608626b480c272d0f4a5920a8b0852b2515a4eb902"
+      },
+      "person": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a"
+    },
+    {
+      "name": "approval_for_other_request",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"238ce886b84bc2306e798bd5fe1a1d930e8660b4e9fa80d74d2b9ebfc6ec39c7\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\"}",
+        "content_hash": "d0c6cb3df1b801cebb0f1d93986de696a20cd81d45db1643d2ac668e722a7cda",
+        "signature": "4d192b053637313d12a11472ad7dc1162dc3e7e7db92574d3c39267d420d7793350f6ea98fdcec4774632cb3fbe3040f50c5573cf1b799f82e6e63633d33980b"
+      }
+    },
+    {
+      "name": "approval_for_other_purpose",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"sign\"}",
+        "content_hash": "b93f8ecce9f319c2fc2cce3115f1425389bcf367300bf72ab0844e121c42ea25",
+        "signature": "1c8d509ab333cb13ac0f3a139e20e6f899609ae57815e224769de1decfafef8108c6a9d0c1b79ab9a7337fd2867dc3b317808f2a3df37a03eaacbc8c0c0bb602"
+      }
+    },
+    {
+      "name": "approval_for_other_service_key",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0beef5a9e679e6a3e134fe27837bff32c7cb5f5d44ea09bcb0e542bad6a4c0cc\",\"purpose\":\"check-in\"}",
+        "content_hash": "bfca9614fae3dc18a037f44e2fa1f47be058085dc1031291857e745add9e1988",
+        "signature": "d31790f84de9a4c21a886b34c4d95d6e46e770a42865c4a41e82449bc590e4c1229283b03d4acd6a507e2ac8482a87c1286cc41f8b12f9d71e3ed099c4bd7707"
+      },
+      "note": "An approval cannot be carried from one service to another."
+    },
+    {
+      "name": "approval_unknown_field",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\",\"extra\":1}",
+        "content_hash": "6880d2cd5e8612d70cd14733e3e910cddd7096a578fbcef5e8716cf6f1565c0f",
+        "signature": "afc9be3164159b049fe60349a4246e38e43580c269f1aaf8ecc9a537ce5a348ac67dcd62012dbd96e7df9280c64f184c2ff333a7329f4a325ac2b0e28bb8420c"
+      }
+    },
+    {
+      "name": "approval_wrong_kind",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\"}",
+        "content_hash": "ebf735e855c20a3d4151440a81c950eec2f251aebeb9bcd21df840b08e584a4c",
+        "signature": "62fbaab799f68833feda311ad508f223547dd1c1d249700f6138de567f2d60463507abee70ea9af2c227ce1ac6ce33bc2b174c68f068f53a940d8cbfe1bbed0c"
+      }
+    },
+    {
+      "name": "approval_after_request_expired",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000200,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\"}",
+        "content_hash": "d14474a09930a9478dc9b79352c10d65b2c2db73a8b7c35ae4c3d4941752bb76",
+        "signature": "754732bbf10bf6bd78351c54484618eeca40fd516752604bd7e80c285def2d1994f13f969d567ab33775e5608626b480c272d0f4a5920a8b0852b2515a4eb902"
+      }
+    },
+    {
+      "name": "approval_bad_signature",
+      "kind": "approval",
+      "valid": false,
+      "now": 1800000000,
+      "issued": {
+        "author": "0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d",
+        "content": "{\"kind\":\"keystone.request\",\"v\":1,\"service\":\"Front desk\",\"origin\":\"https://desk.example.com\",\"purpose\":\"check-in\",\"nonce\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"issued_at\":1799999990,\"expires_at\":1800000110}",
+        "content_hash": "afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785",
+        "signature": "701bf19cd93543125c69d132402ef3daedaf36145ae931caabfd258852c823498dba6e76c19ef3068d0d1d4cae0463eb76c4bafbc14150491a338cab04816a06"
+      },
+      "approval": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"request\":\"afaea6990919713d709e095dbf045ef8d10f11a17e9edf08cbba36fc784d6785\",\"service_key\":\"0b513ad9b4924015ca0902ed079044d3ac5dbec2306f06948c10da8eb6e39f2d\",\"purpose\":\"check-in\"}",
+        "content_hash": "d14474a09930a9478dc9b79352c10d65b2c2db73a8b7c35ae4c3d4941752bb76",
+        "signature": "f73443f80cc36b884c34839c7056138c9ea8b389aa6ede2a0b032c133103623e08ea0d256cdea33bc1a884baddf5bb6cd395b1b9a87bdb71ed99ebdea84a8200"
+      }
+    }
+  ]
+}
