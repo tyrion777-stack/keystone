@@ -1,3 +1,6 @@
+// A module, as Vite bundles it: without this, tsc reads every page script as one global scope.
+export {};
+
 type View = 'setup' | 'backup' | 'locked' | 'main';
 
 function show(view: View) {

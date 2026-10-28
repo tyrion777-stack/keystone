@@ -151,8 +151,8 @@ Build: `cd extension && npm run build` → load `dist/` unpacked in Chrome.
 
 | App | Type | Status |
 |---|---|---|
-| DeltaType | SvelteKit + Rust sidecar, multi-tenant | Production |
-| elrquiz | Rust/Axum, signed score credentials | Planned |
+| First production app | SvelteKit + Rust sidecar, multi-tenant | Production |
+| A quiz app | Rust/Axum, signed score credentials | Planned |
 
 ---
 

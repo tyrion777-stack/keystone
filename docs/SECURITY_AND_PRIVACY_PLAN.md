@@ -11,7 +11,7 @@ explains why it matters, and describes the fix with an implementation approach.
 When two peers connect directly, both parties see each other's IP address.
 When a peer announces itself to the Kademlia DHT, its IP is stored in
 routing tables visible to any node querying the DHT. The bootstrap node
-on Server 2 sees the IP of every peer that connects to it.
+sees the IP of every peer that connects to it.
 
 This is not a flaw specific to Keystone — BitTorrent, IPFS, and every
 other P2P protocol has the same property. But it is a real exposure.
@@ -192,7 +192,7 @@ or linked — the session keys no longer exist.
 ## 6. Cross-Device Sync
 
 ### Problem
-A Keystone identity lives on one device. If you log into DeltaType on
+A Keystone identity lives on one device. If you log into a site on
 your phone, you cannot use the same identity on your laptop without
 manually copying the private key file — which is insecure if done naively.
 
