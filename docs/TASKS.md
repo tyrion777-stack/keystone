@@ -104,8 +104,8 @@
 ## Browser Extension ← NEXT
 *Goal: `window.keystone` on every page — sign in anywhere, no accounts*
 
-Located at `../keystone-extension/` (TypeScript, Vite + crxjs MV3).
-Build: `cd keystone-extension && npm run build` → load `dist/` unpacked in Chrome.
+Located at `extension/` (TypeScript, Vite + crxjs MV3).
+Build: `cd extension && npm run build` → load `dist/` unpacked in Chrome.
 
 - [x] Key vault — PBKDF2-SHA256 + AES-256-GCM in `chrome.storage.local`
 - [x] Session unlock — seed cached in `chrome.storage.session` for 30 min

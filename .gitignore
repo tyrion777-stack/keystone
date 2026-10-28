@@ -1,5 +1,22 @@
+# Rust
 /target
+
+# JavaScript
+node_modules/
+dist/
+/app/build/
+/app/.svelte-kit/
+
+# Android
+local.properties
+.gradle/
+
+# Secrets: never commit keys, signing stores or credentials
 *.key
 *.pem
 *.p8
 *.p12
+*.jks
+*.keystore
+.env
+.env.*

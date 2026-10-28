@@ -67,7 +67,7 @@ Any piece of content can be signed. The signature proves:
 > **Two key types.** An `author` of bare hex is Ed25519. An `author` starting
 > `p256:` is ECDSA P-256 (the curve phone hardware and passkeys use): SHA-256,
 > 33-byte compressed key, 64-byte `r || s` signature, low-S only. Shared test
-> vectors for both are in `test-vectors/signed_message.json`.
+> vectors for both are in the repo's `test-vectors/signed_message.json`.
 
 ```rust
 use keystone_core::Identity;
@@ -149,7 +149,7 @@ Ok(Json(json!({ "token": token })))
 ### Passkeys (no app needed)
 
 Every phone browser can make a key in its own chip and unlock it with a fingerprint.
-Keystone verifies those keys too. Drop `js/keystone-passkey.js` (no dependencies) into
+Keystone verifies those keys too. Drop `core/js/keystone-passkey.js` (no dependencies) into
 your page:
 
 ```js

@@ -9,6 +9,20 @@ stake their identity on it.
 
 ---
 
+## Layout
+
+One repository, four parts. The rules below apply to all of them.
+
+| Folder | What | Checks |
+|---|---|---|
+| `core/` | Rust library (`keystone-core` crate): keys, signing, passkeys, signed requests, P2P | `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo test --workspace --all-features` |
+| `relay/` | Rust relay server (`keystone-relay`) | same cargo commands (one workspace) |
+| `extension/` | Browser extension (TypeScript, Vite, MV3) | `npm ci && npm run build` |
+| `app/` | Phone app (SvelteKit + Capacitor Android) | `npm ci && npm run check && npm run build` |
+| `test-vectors/` | Shared cross-language vectors and the tools that make them | used by the tests above |
+
+---
+
 ## The user will talk casually. You supply the discipline.
 
 Before changing anything, turn the request into a ticket and show it:
@@ -24,9 +38,11 @@ Class:       A / B / C
 - **Class B** (new features, protocol additions, new message types, relay behaviour):
   show the ticket and go ahead unless ambiguous.
 - **Class A** (anything touching the signing or verification path, key storage, hash
-  or bounds validation, wire format of existing message types — `src/identity.rs`,
-  `src/content.rs` security paths, `src/error.rs`, `src/key.rs` algorithm dispatch): show the
-  ticket **and a short plan**, wait for a yes before writing code.
+  or bounds validation, wire format of existing message types — `core/src/identity.rs`,
+  `core/src/content.rs` security paths, `core/src/error.rs`, `core/src/key.rs` algorithm
+  dispatch, `core/src/webauthn.rs`, `core/src/request.rs`, and key storage or signing in
+  `extension/src/crypto.ts`, `extension/src/background.ts`, `app/src/lib/crypto.ts`): show
+  the ticket **and a short plan**, wait for a yes before writing code.
 
 When unsure of the class, pick the higher one.
 
@@ -36,8 +52,8 @@ When unsure of the class, pick the higher one.
 
 - **Work on a branch** named `feat/…`, `fix/…`, or `stage<N>/…`. Branch off `master`.
   Never commit directly to `master`.
-- **Open a pull request.** CI (`cargo build`, `cargo test`, `cargo clippy`, `cargo fmt
-  --check`) must be green before merge. State in the PR description which tests you ran.
+- **Open a pull request.** CI (the checks in the layout table, for every part the PR
+  touches) must be green before merge. State in the PR description which tests you ran.
 - **Reproduce before fixing.** Write a failing test first, fix second, verify it passes.
   Name the root cause in the commit message — not what changed, why.
 - **Test vectors for every algorithm.** Any new signing or verification path needs test
@@ -58,7 +74,7 @@ When unsure of the class, pick the higher one.
 ## Never
 
 - **Never panic in library code.** Use `Result` or `Option`. Panics in CLI binaries
-  (`src/bin/`) are acceptable; panics in any function a downstream crate can call are not.
+  (`core/src/bin/`) are acceptable; panics in any function a downstream crate can call are not.
 - **Never store or log a private key in plaintext.** Key material is encrypted before
   it touches disk (Argon2id + AES-256-GCM, see `docs/SECURITY_AND_PRIVACY_PLAN.md`).
 - **Never skip input validation on data from a remote peer** — not in a test, not because
@@ -91,12 +107,12 @@ Stopping to ask is always correct. Guessing on security-critical code is not.
 
 ## Code conventions
 
-- Rust edition 2024. `cargo fmt` and `cargo clippy --all-features -- -D warnings` must
-  pass before a PR opens.
-- Errors via `thiserror` in `src/error.rs` with a descriptive message. No `unwrap()` or
+- Rust edition 2024 for new crates. `cargo fmt --all` and `cargo clippy --workspace
+  --all-targets --all-features -- -D warnings` must pass before a PR opens.
+- Errors via `thiserror` in `core/src/error.rs` with a descriptive message. No `unwrap()` or
   `expect()` in library code except inside `#[cfg(test)]` blocks.
 - **Algorithm dispatch:** the algorithm lives in the key itself, never in a separate
-  field, so a key and its type cannot come apart. `PublicKey::from_wire` (`src/key.rs`)
+  field, so a key and its type cannot come apart. `PublicKey::from_wire` (`core/src/key.rs`)
   reads it. New algorithms add a variant and a prefix — they never replace `ed25519`.
 - **Public key format:** wire form (`author`) is bare hex for Ed25519 (unchanged since
   v0.1) and `<alg>:<hex>` for everything else (`p256:…`). Display form always carries the

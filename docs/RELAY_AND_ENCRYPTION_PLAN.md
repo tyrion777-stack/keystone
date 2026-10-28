@@ -30,7 +30,7 @@ Once the relayed connection is established, both peers attempt simultaneous UDP 
 libp2p = { ..., features = [..., "relay", "dcutr"] }
 ```
 
-**`src/network.rs`** — add to `KeystoneBehaviour`:
+**`core/src/network.rs`** — add to `KeystoneBehaviour`:
 ```rust
 pub relay_client: relay::client::Behaviour,
 pub dcutr: dcutr::Behaviour,
@@ -41,12 +41,12 @@ Add to swarm builder chain:
 ```
 `dcutr::Behaviour` wires up automatically once relay client is present.
 
-**`src/bin/node.rs`** — after connecting to bootstrap:
+**`core/src/bin/node.rs`** — after connecting to bootstrap:
 1. Request a relay reservation: `swarm.listen_on(relay_circuit_addr)`
 2. Handle `relay::client::Event::ReservationReqAccepted` — relay address is live
 3. Store relay address in DHT alongside TCP/QUIC addresses
 
-**`src/bin/bootstrap.rs`** — enable relay server:
+**`core/src/bin/bootstrap.rs`** — enable relay server:
 ```rust
 pub relay: relay::Behaviour,
 ```
@@ -123,18 +123,18 @@ DHT peer records gain the X25519 public key so senders can look up any peer's en
 
 ### What changes
 
-**`src/identity.rs`** — add X25519 keypair to `Identity`, generate on `new()`, load/save in key file.
+**`core/src/identity.rs`** — add X25519 keypair to `Identity`, generate on `new()`, load/save in key file.
 
-**`src/content.rs`** (or new `src/encryption.rs`):
+**`core/src/content.rs`** (or new `core/src/encryption.rs`):
 - `encrypt_for(data, recipients: &[X25519PublicKey]) -> EncryptedBlob`
 - `decrypt(blob: &EncryptedBlob, identity: &Identity) -> Option<Vec<u8>>`
 - `ContentStore::store_encrypted(data, recipients) -> Blake3Hash`
 
-**`src/protocol.rs`** — `ChunkResponse` carries `encrypted: bool` flag; chunk data is ciphertext when set.
+**`core/src/protocol.rs`** — `ChunkResponse` carries `encrypted: bool` flag; chunk data is ciphertext when set.
 
-**`src/network.rs`** — DHT `put_record` for peer includes X25519 public key.
+**`core/src/network.rs`** — DHT `put_record` for peer includes X25519 public key.
 
-**`src/bin/node.rs`** — when serving content: check if stored blob is encrypted; send ciphertext chunks as-is (recipient decrypts on reassembly). When fetching: reassemble chunks, then decrypt.
+**`core/src/bin/node.rs`** — when serving content: check if stored blob is encrypted; send ciphertext chunks as-is (recipient decrypts on reassembly). When fetching: reassemble chunks, then decrypt.
 
 ### Scope for Phase 5
 
