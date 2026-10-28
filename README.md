@@ -187,9 +187,42 @@ let passkey = assertion.verify(&expected)?;
 authenticator's `sign_count`. If a non-zero count fails to increase, the passkey may have been
 copied; what to do then is your call.
 
+To tie a passkey approval to a signed request (below), use the request's
+`passkey_challenge()` as the challenge.
+
 Synced passkeys (Google Password Manager, iCloud Keychain) are made in hardware but copied,
 encrypted, to the person's other devices. A FIDO security key or card is the strictly
 device-bound option.
+
+---
+
+## Signed Requests
+
+A QR or link that just says "I am the front desk" can be faked. Instead, the service
+signs every request with its own Keystone identity, and the person's approval signs that
+exact request back:
+
+```rust
+use keystone_core::{Purpose, ServiceRequest, verify_approval};
+
+// Service: issue a request (valid for 2 minutes) and show it as a QR.
+let request = ServiceRequest::new("Front desk", "https://desk.example.com",
+                                  Purpose::CheckIn, None, now, 120)?;
+let issued = request.sign(&desk_identity)?;
+
+// Phone: check it, show the name, compare seen.service_key with the key pinned at first link.
+let seen = ServiceRequest::verify(&issued, now)?;
+let approval = seen.approve(&person_identity)?;
+
+// Service: check the approval against the request it issued, then mark the nonce used.
+let ok = verify_approval(&approval, &issued, now)?;
+mark_used(&ok.nonce)?;               // each nonce must be accepted once
+let person = ok.person;              // the approving key
+```
+
+An approval cannot be reused for another request, another service or another purpose.
+The service name is only a label: anyone can claim any name. Trust the service's key,
+pinned the first time the person links.
 
 ---
 
