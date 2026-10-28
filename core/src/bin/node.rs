@@ -14,13 +14,55 @@ use keystone_core::{
     network::{KeystoneBehaviourEvent, build_swarm_with_keypair, keypair_from_identity},
     protocol::{ChunkRequest, ChunkResponse, ContentResponse, FollowRequest, FollowResponse},
 };
-use libp2p::{Multiaddr, PeerId, identify, kad, mdns, relay, request_response, swarm::SwarmEvent};
+use libp2p::{
+    Multiaddr, PeerId, identify, kad, mdns, multiaddr::Protocol, relay, request_response,
+    swarm::SwarmEvent,
+};
 
-const BOOTSTRAP_ADDR: &str =
-    "/ip4/124.43.78.112/tcp/9000/p2p/12D3KooWCruYnFTDrFoNPtHpaGPcWm4NvfzjyS7uVqWCBimievS2";
-// Bootstrap node doubles as circuit relay — use it as fallback when behind NAT.
-const RELAY_CIRCUIT_ADDR: &str = "/ip4/124.43.78.112/tcp/9000/p2p/12D3KooWCruYnFTDrFoNPtHpaGPcWm4NvfzjyS7uVqWCBimievS2/p2p-circuit";
 const DEFAULT_KEY_FILE: &str = "keystone.key";
+// The bootstrap node is not compiled in: it is whoever runs one, given as a multiaddr ending in
+// its peer id. Without one the node finds peers on the local network only (mDNS).
+const BOOTSTRAP_ENV: &str = "KEYSTONE_BOOTSTRAP";
+// Flags that take a value. The key file is the first argument that is neither one of these
+// nor a value given to one.
+const VALUE_FLAGS: [&str; 5] = ["--find", "--follow", "--publish", "--fetch", "--bootstrap"];
+
+fn flag_value(args: &[String], flag: &str) -> Option<String> {
+    args.windows(2).find(|w| w[0] == flag).map(|w| w[1].clone())
+}
+
+fn key_path(args: &[String]) -> PathBuf {
+    let mut rest = args.iter().skip(1);
+    while let Some(a) = rest.next() {
+        if VALUE_FLAGS.contains(&a.as_str()) {
+            rest.next();
+        } else if !a.starts_with("--") {
+            return PathBuf::from(a);
+        }
+    }
+    PathBuf::from(DEFAULT_KEY_FILE)
+}
+
+fn bootstrap_setting(args: &[String], env: Option<String>) -> Option<String> {
+    flag_value(args, "--bootstrap")
+        .or(env)
+        .filter(|s| !s.trim().is_empty())
+}
+
+/// The address to dial, and the circuit address through it: the bootstrap node doubles as a
+/// circuit relay, the fallback when this node is behind NAT.
+fn parse_bootstrap(addr: &str) -> Result<(Multiaddr, Multiaddr), String> {
+    let dial: Multiaddr = addr
+        .parse()
+        .map_err(|e| format!("bootstrap address {addr:?} is not a multiaddr: {e}"))?;
+    if !matches!(dial.iter().last(), Some(Protocol::P2p(_))) {
+        return Err(format!(
+            "bootstrap address {addr:?} must end in /p2p/<peer id>"
+        ));
+    }
+    let circuit = dial.clone().with(Protocol::P2pCircuit);
+    Ok((dial, circuit))
+}
 
 fn load_or_create_identity(path: &PathBuf) -> Result<Identity, Box<dyn std::error::Error>> {
     if path.exists() {
@@ -102,32 +144,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query_mode = args.iter().any(|a| a == "--query");
     let revoke_mode = args.iter().any(|a| a == "--revoke");
 
-    let find_key: Option<String> = args
-        .windows(2)
-        .find(|w| w[0] == "--find")
-        .map(|w| w[1].clone());
+    let find_key = flag_value(&args, "--find");
 
-    let follow_key: Option<String> = args
-        .windows(2)
-        .find(|w| w[0] == "--follow")
-        .map(|w| w[1].clone());
+    let follow_key = flag_value(&args, "--follow");
 
-    let publish_path: Option<PathBuf> = args
-        .windows(2)
-        .find(|w| w[0] == "--publish")
-        .map(|w| PathBuf::from(&w[1]));
+    let publish_path = flag_value(&args, "--publish").map(PathBuf::from);
 
-    let fetch_hash: Option<String> = args
-        .windows(2)
-        .find(|w| w[0] == "--fetch")
-        .map(|w| w[1].clone());
+    let fetch_hash = flag_value(&args, "--fetch");
 
-    let key_path = args
-        .iter()
-        .skip(1)
-        .find(|a| !a.starts_with("--"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_KEY_FILE));
+    let key_path = key_path(&args);
+    // A bad address is a mistake to stop on, not something to quietly run without.
+    let bootstrap = bootstrap_setting(&args, std::env::var(BOOTSTRAP_ENV).ok())
+        .map(|a| parse_bootstrap(&a))
+        .transpose()?;
 
     let identity = load_or_create_identity(&key_path)?;
     let libp2p_keypair = keypair_from_identity(&identity)?;
@@ -206,17 +235,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
     swarm.listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
 
-    let bootstrap: Multiaddr = BOOTSTRAP_ADDR.parse()?;
-    match swarm.dial(bootstrap) {
-        Ok(_) => println!("[b] Dialing bootstrap node..."),
-        Err(e) => println!("[b] Bootstrap dial failed: {e} (continuing with mDNS only)"),
-    }
+    match bootstrap {
+        Some((dial, relay_circuit)) => {
+            match swarm.dial(dial) {
+                Ok(_) => println!("[b] Dialing bootstrap node..."),
+                Err(e) => println!("[b] Bootstrap dial failed: {e} (continuing with mDNS only)"),
+            }
 
-    // Request a relay reservation so peers behind NAT can be reached via the bootstrap relay.
-    let relay_circuit: Multiaddr = RELAY_CIRCUIT_ADDR.parse()?;
-    match swarm.listen_on(relay_circuit) {
-        Ok(_) => println!("[r] Relay reservation requested..."),
-        Err(e) => println!("[r] Relay reservation failed: {e}"),
+            // Request a relay reservation so peers behind NAT can be reached via the bootstrap relay.
+            match swarm.listen_on(relay_circuit) {
+                Ok(_) => println!("[r] Relay reservation requested..."),
+                Err(e) => println!("[r] Relay reservation failed: {e}"),
+            }
+        }
+        None => println!(
+            "[b] No bootstrap node (--bootstrap or {BOOTSTRAP_ENV}); local network only (mDNS)"
+        ),
     }
 
     loop {
@@ -681,5 +715,71 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const PEER: &str = "12D3KooWCruYnFTDrFoNPtHpaGPcWm4NvfzjyS7uVqWCBimievS2";
+
+    fn args(list: &[&str]) -> Vec<String> {
+        std::iter::once("node")
+            .chain(list.iter().copied())
+            .map(String::from)
+            .collect()
+    }
+
+    #[test]
+    fn bootstrap_gives_dial_and_relay_addresses() {
+        let addr = format!("/ip4/192.0.2.7/tcp/9000/p2p/{PEER}");
+        let (dial, circuit) = parse_bootstrap(&addr).unwrap();
+        assert_eq!(dial.to_string(), addr);
+        assert_eq!(circuit.to_string(), format!("{addr}/p2p-circuit"));
+    }
+
+    #[test]
+    fn bootstrap_needs_a_peer_id_at_the_end() {
+        for bad in [
+            "",
+            "not a multiaddr",
+            "/ip4/192.0.2.7/tcp/9000",
+            "/ip4/192.0.2.7/tcp/9000/p2p-circuit",
+        ] {
+            assert!(parse_bootstrap(bad).is_err(), "{bad:?}");
+        }
+        let circuit_already = format!("/ip4/192.0.2.7/tcp/9000/p2p/{PEER}/p2p-circuit");
+        assert!(parse_bootstrap(&circuit_already).is_err());
+    }
+
+    #[test]
+    fn bootstrap_flag_wins_over_environment() {
+        let flag = format!("/ip4/192.0.2.7/tcp/9000/p2p/{PEER}");
+        let env = format!("/ip4/198.51.100.9/tcp/9000/p2p/{PEER}");
+        let a = args(&["--bootstrap", &flag]);
+        assert_eq!(bootstrap_setting(&a, Some(env.clone())), Some(flag));
+        assert_eq!(bootstrap_setting(&args(&[]), Some(env.clone())), Some(env));
+        assert_eq!(bootstrap_setting(&args(&[]), None), None);
+        assert_eq!(bootstrap_setting(&args(&[]), Some("  ".into())), None);
+    }
+
+    #[test]
+    fn key_path_skips_flag_values() {
+        let key = "ab".repeat(32);
+        let addr = format!("/ip4/192.0.2.7/tcp/9000/p2p/{PEER}");
+        assert_eq!(
+            key_path(&args(&["--find", &key])),
+            PathBuf::from(DEFAULT_KEY_FILE)
+        );
+        assert_eq!(
+            key_path(&args(&["--bootstrap", &addr, "me.key"])),
+            PathBuf::from("me.key")
+        );
+        assert_eq!(
+            key_path(&args(&["--query", "me.key", "--follow", &key])),
+            PathBuf::from("me.key")
+        );
+        assert_eq!(key_path(&args(&[])), PathBuf::from(DEFAULT_KEY_FILE));
     }
 }
