@@ -5,13 +5,14 @@ use aes_gcm::{
     aead::{Aead, KeyInit},
 };
 use argon2::Argon2;
-use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use ed25519_dalek::{Signature, Signer, SigningKey};
 use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 
 use crate::error::KeystoneError;
+use crate::key::PublicKey;
 
 const SALT_LEN: usize = 16;
 const NONCE_LEN: usize = 12;
@@ -200,15 +201,10 @@ fn derive_x25519(ed25519_seed: &[u8; 32]) -> StaticSecret {
 
 impl SignedMessage {
     /// Verify this message's signature against its claimed author.
+    /// The author's key type comes from its wire form: bare hex is Ed25519, `p256:` is P-256.
     /// Returns Ok(()) if authentic, Err if tampered or forged.
     pub fn verify(&self) -> Result<(), KeystoneError> {
-        // Decode the author's public key
-        let key_bytes = hex::decode(&self.author)?;
-        let key_arr: [u8; 32] = key_bytes
-            .try_into()
-            .map_err(|_| KeystoneError::InvalidPublicKey("must be 32 bytes".into()))?;
-        let verifying_key = VerifyingKey::from_bytes(&key_arr)
-            .map_err(|e| KeystoneError::InvalidPublicKey(e.to_string()))?;
+        let author = PublicKey::from_wire(&self.author)?;
 
         // Re-derive the content hash and confirm it matches the stored hash
         let recomputed_hash = blake3::hash(self.content.as_bytes());
@@ -217,16 +213,7 @@ impl SignedMessage {
             return Err(KeystoneError::InvalidSignature);
         }
 
-        // Decode and verify the signature
-        let sig_bytes = hex::decode(&self.signature)?;
-        let sig_arr: [u8; 64] = sig_bytes
-            .try_into()
-            .map_err(|_| KeystoneError::InvalidSignature)?;
-        let signature = Signature::from_bytes(&sig_arr);
-
-        verifying_key
-            .verify(self.content_hash.as_bytes(), &signature)
-            .map_err(|_| KeystoneError::InvalidSignature)
+        author.verify(self.content_hash.as_bytes(), &self.signature)
     }
 
     /// Serialize to JSON — this is what you'd send over the wire.
@@ -298,6 +285,18 @@ mod tests {
         let json = msg.to_json().unwrap();
         let restored = SignedMessage::from_json(&json).unwrap();
         assert!(restored.verify().is_ok());
+    }
+
+    #[test]
+    fn shared_test_vectors() {
+        let file: serde_json::Value =
+            serde_json::from_str(include_str!("../test-vectors/signed_message.json")).unwrap();
+        for case in file["cases"].as_array().unwrap() {
+            let name = case["name"].as_str().unwrap();
+            let msg: SignedMessage = serde_json::from_value(case["message"].clone()).unwrap();
+            let expected = case["valid"].as_bool().unwrap();
+            assert_eq!(msg.verify().is_ok(), expected, "vector {name}");
+        }
     }
 
     #[test]
