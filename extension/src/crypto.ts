@@ -1,6 +1,7 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { blake3 } from '@noble/hashes/blake3';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import type { SignedMessage } from '../../wasm/js/keystone-core';
 
 // --- Key generation & derivation ---
 
@@ -29,6 +30,17 @@ export function signChallenge(seed: Uint8Array, challenge: string): string {
   const hashHex = bytesToHex(hashBytes);
   const sig = ed25519.sign(new TextEncoder().encode(hashHex), seed);
   return bytesToHex(sig);
+}
+
+// A SignedMessage, as keystone-core reads it: the content, its Blake3 hex, and the signature
+// over that hex.
+export function signMessage(seed: Uint8Array, content: string): SignedMessage {
+  return {
+    author: getPublicKeyHex(seed),
+    content,
+    content_hash: bytesToHex(blake3(new TextEncoder().encode(content))),
+    signature: signChallenge(seed, content),
+  };
 }
 
 // --- Encrypted key storage ---

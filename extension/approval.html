@@ -53,11 +53,25 @@
     .btn-deny:hover { background: #f9f9f9; }
     .error { color: #dc2626; font-size: 12px; margin-top: 8px; min-height: 18px; }
     .loading { color: #888; font-size: 13px; }
+    .ask { font-size: 14px; margin: 0 0 12px; }
+    .note { font-size: 12px; color: #555; margin: 0 0 12px; }
+    .verified { color: #15803d; }
+    .payload {
+      font-size: 13px; white-space: pre-wrap; word-break: break-word;
+      background: #f4f4f5; padding: 8px 10px; border-radius: 6px;
+      max-height: 120px; overflow-y: auto; margin-bottom: 12px;
+    }
+    .warning {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px;
+    }
+    .key { font-family: monospace; font-size: 10px; word-break: break-all; color: #555; }
+    .btn-forget { background: transparent; color: #991b1b; border: 1px solid #fecaca; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>Sign Request</h1>
+  <h1 id="title">Keystone</h1>
 
   <p class="loading" id="loading">Loading…</p>
 
@@ -65,8 +79,12 @@
     <div class="row-label">Requesting site</div>
     <div class="origin" id="req-origin"></div>
 
-    <div class="row-label">Challenge to sign</div>
-    <div class="challenge" id="req-challenge"></div>
+    <!-- Filled by approval.ts with textContent only: never markup a site supplied. -->
+    <p class="ask" id="req-ask"></p>
+    <div class="payload" id="req-payload" hidden></div>
+    <p class="note" id="req-note"></p>
+
+    <div class="warning" id="req-warning" hidden></div>
 
     <div id="ap-pw-block" hidden>
       <label for="ap-pw">Enter your Keystone password to approve</label>
@@ -75,7 +93,8 @@
 
     <div class="actions">
       <button class="btn btn-deny"    id="deny-btn">Deny</button>
-      <button class="btn btn-approve" id="approve-btn">Sign &amp; Approve</button>
+      <button class="btn btn-approve" id="approve-btn">Approve</button>
+      <button class="btn btn-forget"  id="forget-btn" hidden>Forget old key</button>
     </div>
     <div class="error" id="ap-error"></div>
   </div>

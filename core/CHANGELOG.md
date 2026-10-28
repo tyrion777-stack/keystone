@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Sign-in bound to a site** (`sign_in`): `sign_in_content(origin, challenge)` is what a
+  browser signs; `verify_sign_in(signed, origin, challenge)` is what the service checks. A
+  signature made on one site fails on every other. Vectors: `test-vectors/sign_in.json`.
+- `VerifiedRequest::approval_content`: the text to sign to approve a request, for a key held
+  outside an `Identity` (a browser extension, a phone app).
+
 ## 0.2.0
 
 Everything here is new since 0.1.2. Signatures made by 0.1.x keep verifying: the bare-hex

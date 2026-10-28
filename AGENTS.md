@@ -40,8 +40,10 @@ Class:       A / B / C
 - **Class A** (anything touching the signing or verification path, key storage, hash
   or bounds validation, wire format of existing message types — `core/src/identity.rs`,
   `core/src/content.rs` security paths, `core/src/error.rs`, `core/src/key.rs` algorithm
-  dispatch, `core/src/webauthn.rs`, `core/src/request.rs`, and key storage or signing in
-  `extension/src/crypto.ts`, `extension/src/background.ts`, `app/src/lib/crypto.ts`): show
+  dispatch, `core/src/webauthn.rs`, `core/src/request.rs`, `core/src/sign_in.rs`, `wasm/` (core's
+  checks for JavaScript), and key storage, signing or request handling in
+  `extension/src/crypto.ts`, `extension/src/background.ts`, `extension/src/requests.ts`,
+  `app/src/lib/crypto.ts`, `app/src/lib/requests.ts`): show
   the ticket **and a short plan**, wait for a yes before writing code.
 
 When unsure of the class, pick the higher one.

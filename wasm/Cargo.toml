@@ -1,0 +1,21 @@
+[package]
+name = "keystone-wasm"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.87"
+description = "keystone-core's checks, compiled to WebAssembly for the app and the extension"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+keystone-core = { path = "../core", default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Nothing here draws randomness: these are checks, not key generation. The crates under
+# keystone-core still need a source to build for the browser, so they get one that fails.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["custom"] }

@@ -201,6 +201,12 @@ impl ServiceRequest {
 impl VerifiedRequest {
     /// The person approves this request.
     pub fn approve(&self, person: &Identity) -> Result<SignedMessage, KeystoneError> {
+        Ok(person.sign(&self.approval_content()?))
+    }
+
+    /// The text the person signs to approve this request, for a key held outside an
+    /// `Identity` (a browser extension, a phone app). Sign it with the `SignedMessage` rule.
+    pub fn approval_content(&self) -> Result<String, KeystoneError> {
         let content = ApprovalContent {
             kind: APPROVAL_KIND.into(),
             v: VERSION,
@@ -208,7 +214,7 @@ impl VerifiedRequest {
             service_key: self.service_key.to_wire(),
             purpose: self.request.purpose,
         };
-        Ok(person.sign(&serde_json::to_string(&content)?))
+        Ok(serde_json::to_string(&content)?)
     }
 
     /// Use as the WebAuthn challenge to approve this request with a passkey: the request's
@@ -275,7 +281,7 @@ fn validate_service_name(name: &str) -> Result<(), KeystoneError> {
 
 /// `https://host[:port]`, or `http://localhost[:port]` for development. Lowercase, no path,
 /// no user info, so one origin has one spelling.
-fn validate_origin(origin: &str) -> Result<(), KeystoneError> {
+pub(crate) fn validate_origin(origin: &str) -> Result<(), KeystoneError> {
     let bad = || {
         Err(KeystoneError::Request(format!(
             "origin {origin:?} is not allowed"
@@ -309,15 +315,17 @@ fn validate_origin(origin: &str) -> Result<(), KeystoneError> {
     if host_ok && port_ok { Ok(()) } else { bad() }
 }
 
-fn validate_nonce(nonce: &str) -> Result<(), KeystoneError> {
-    let len_ok = nonce.len() >= NONCE_BYTES * 2
-        && nonce.len() <= MAX_NONCE_HEX
-        && nonce.len().is_multiple_of(2);
-    if len_ok
-        && nonce
-            .bytes()
+/// 16 to 64 bytes of lowercase hex: a nonce, or a sign-in challenge.
+pub(crate) fn is_hex_token(s: &str) -> bool {
+    s.len() >= NONCE_BYTES * 2
+        && s.len() <= MAX_NONCE_HEX
+        && s.len().is_multiple_of(2)
+        && s.bytes()
             .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-    {
+}
+
+fn validate_nonce(nonce: &str) -> Result<(), KeystoneError> {
+    if is_hex_token(nonce) {
         Ok(())
     } else {
         Err(KeystoneError::Request(
@@ -335,6 +343,26 @@ mod tests {
 
     fn msg(v: &Value) -> SignedMessage {
         serde_json::from_value(v.clone()).unwrap()
+    }
+
+    #[test]
+    fn approval_content_is_what_approve_signs() {
+        let service = Identity::generate();
+        let person = Identity::generate();
+        let request = ServiceRequest::new(
+            "Front desk",
+            "https://desk.example.com",
+            Purpose::Link,
+            None,
+            NOW,
+            60,
+        )
+        .unwrap();
+        let verified = ServiceRequest::verify(&request.sign(&service).unwrap(), NOW).unwrap();
+        let content = verified.approval_content().unwrap();
+        assert_eq!(verified.approve(&person).unwrap().content, content);
+        let issued = request.sign(&service).unwrap();
+        assert!(verify_approval(&person.sign(&content), &issued, NOW).is_ok());
     }
 
     #[test]

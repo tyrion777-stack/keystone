@@ -149,13 +149,24 @@ src/approval.ts     The window that appears when a site requests signing.
   which site is asking (the origin Chrome reports, not one the page supplies).
   Unlocked, approving is one click; locked, it takes the password. The user can
   deny any request.
-- A page can get one thing signed: a sign-in challenge, lowercase hex of 16 to
-  64 bytes (`src/signing-policy.ts`). Approvals, follows and service requests
-  are signed with the same key and are all JSON, so a page can never get one of
-  them signed. Anything else is refused before a window opens.
-- Pages reach the worker with two messages only, `GET_PUBKEY` and
-  `SIGN_REQUEST`. Setup, unlock and approving come from the extension's own
-  pages; the worker ignores them from anywhere else.
-- Tests: `npm test` (unit, against `test-vectors/`), and `e2e/signing.js`,
-  which loads the built extension in Chrome and tries to get content signed
-  from a web page.
+- The extension never signs text a page chose. A page gets two things signed,
+  both built by the extension (`src/requests.ts`), checked by keystone-core
+  itself compiled to WebAssembly (`../wasm/`):
+  - `keystone.signIn(challenge)`: the signed text names the page's real origin
+    and the challenge (lowercase hex, 16 to 64 bytes), so the signature is no
+    good on any other site.
+  - `keystone.approve(request)`: the answer to a service's signed request,
+    only if the request is valid, is for this page's own origin, and is
+    signed by the same key the site used before. The first key a site uses is
+    pinned; a different key later shows a "Blocked" window with nothing to
+    approve.
+  Anything else is refused before a window opens.
+- Pages reach the worker with three messages only, `GET_PUBKEY`,
+  `SIGN_IN_REQUEST` and `APPROVE_REQUEST`. Setup, unlock and approving come
+  from the extension's own pages; the worker ignores them from anywhere else.
+- `manifest.json` is the one manifest (`vite.config.ts` imports it). Its CSP
+  allows `wasm-unsafe-eval`, which WebAssembly needs, and nothing else.
+- Tests: `npm test` (unit, against `test-vectors/`, through the WebAssembly
+  build), and `e2e/signing.js`, which loads the built extension in Chrome and
+  checks every result with keystone-core. Building needs Rust:
+  `npm run build` first builds `../wasm` (`npm run wasm`).

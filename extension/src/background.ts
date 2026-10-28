@@ -1,25 +1,33 @@
 import {
   encryptSeed,
   decryptSeed,
-  signChallenge,
+  signMessage,
   getPublicKeyHex,
   generateSeed,
   seedFromHex,
 } from './crypto';
-import { isSignInChallenge } from './signing-policy';
+import {
+  contentToSign,
+  pinAfterApproval,
+  prepareApproval,
+  prepareSignIn,
+  Refused,
+  type Pending,
+  type Pins,
+} from './requests';
+import { nowSeconds, type SignedMessage } from '../../wasm/js/keystone-core';
 
-// In-flight sign requests waiting on the approval window: requestId → resolve
+// In-flight requests waiting on the approval window: requestId → resolve
 const pending = new Map<string, (result: SignResult) => void>();
 
 interface SignResult {
-  signature?: string;
-  pubkey?: string;
+  signed?: SignedMessage;
   error?: string;
 }
 
-// A web page reaches the worker only through content.ts, and only with these two messages.
+// A web page reaches the worker only through content.ts, and only with these messages.
 // Everything else (setup, unlock, approving a request) comes from the extension's own pages.
-const PAGE_MESSAGES = new Set(['GET_PUBKEY', 'SIGN_REQUEST']);
+const PAGE_MESSAGES = new Set(['GET_PUBKEY', 'SIGN_IN_REQUEST', 'APPROVE_REQUEST']);
 
 function isExtensionPage(sender: chrome.runtime.MessageSender): boolean {
   return sender.id === chrome.runtime.id && (sender.url ?? '').startsWith(chrome.runtime.getURL(''));
@@ -72,15 +80,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.storage.session.remove('session').then(() => sendResponse({ ok: true }));
       return true;
 
-    case 'SIGN_REQUEST': {
+    case 'SIGN_IN_REQUEST':
+    case 'APPROVE_REQUEST': {
       const origin = senderOrigin(sender);
       if (isExtensionPage(sender) || !origin) {
         sendResponse({ error: 'Sign requests come from web pages only' });
         return false;
       }
-      handleSignRequest(msg.challenge, origin).then(sendResponse);
+      const prepare =
+        msg.type === 'SIGN_IN_REQUEST'
+          ? prepareSignIn(msg.challenge, origin)
+          : loadPins().then(pins => prepareApproval(msg.request, origin, pins));
+      prepare.then(askPerson, refusal).then(sendResponse);
       return true;
     }
+
+    case 'FORGET_PIN':
+      forgetPin(msg.requestId as string).then(sendResponse);
+      return true;
 
     case 'SIGN_APPROVED':
       handleApproved(msg.requestId as string, msg.password as string | undefined).then(sendResponse);
@@ -144,27 +161,35 @@ async function unlockWithPassword(password: string) {
 
 // Every request opens the approval window, locked or not: the person sees which site is asking
 // before anything is signed. Unlocked only means no password is asked for.
-async function handleSignRequest(challenge: unknown, origin: string): Promise<SignResult> {
-  if (!isSignInChallenge(challenge)) {
-    return { error: 'Keystone signs sign-in challenges only' };
-  }
+function refusal(e: unknown): SignResult {
+  if (e instanceof Refused) return { error: e.message };
+  console.error('Keystone: request failed', e);
+  return { error: 'Keystone could not check that request' };
+}
 
+// Every request that passed its checks opens the approval window, locked or not: the person
+// sees which site is asking, and for what, before anything is signed.
+async function askPerson(p: Pending): Promise<SignResult> {
   const requestId = crypto.randomUUID();
-  await chrome.storage.session.set({
-    [`req_${requestId}`]: { challenge, origin },
-  });
+  await chrome.storage.session.set({ [`req_${requestId}`]: p });
 
   await chrome.windows.create({
     url: chrome.runtime.getURL(`approval.html?id=${requestId}`),
     type: 'popup',
-    width: 400,
-    height: 360,
+    width: 420,
+    height: p.kind === 'sign-in' ? 360 : 480,
     focused: true,
   });
 
   return new Promise(resolve => {
     pending.set(requestId, resolve);
   });
+}
+
+// Service keys pinned per site, from the first request the person approved there.
+async function loadPins(): Promise<Pins> {
+  const d = await chrome.storage.local.get('pins');
+  return (d['pins'] as Pins | undefined) ?? {};
 }
 
 // No password means the person approved while unlocked: sign with the session seed.
@@ -176,13 +201,13 @@ async function handleApproved(requestId: string, password: string | undefined): 
 
   try {
     const reqData = await chrome.storage.session.get(`req_${requestId}`);
-    const req = reqData[`req_${requestId}`] as { challenge: unknown } | undefined;
-    if (!req || !isSignInChallenge(req.challenge)) {
+    const req = reqData[`req_${requestId}`] as Pending | undefined;
+    if (!req) {
       finish({ error: 'Request expired or already handled' });
       return {};
     }
 
-    const storage = await chrome.storage.local.get(['encryptedSeed', 'pubkeyHex']);
+    const storage = await chrome.storage.local.get(['encryptedSeed']);
     if (!storage['encryptedSeed']) {
       finish({ error: 'No key configured' });
       return {};
@@ -203,12 +228,37 @@ async function handleApproved(requestId: string, password: string | undefined): 
     }
 
     await chrome.storage.session.remove(`req_${requestId}`);
-    finish({ signature: signChallenge(seed, req.challenge), pubkey: storage['pubkeyHex'] as string });
+    const pins = await loadPins();
+    let content: string;
+    try {
+      content = await contentToSign(req, pins);
+    } catch (e) {
+      finish(refusal(e));
+      return {};
+    }
+    const pinned = pinAfterApproval(req, pins, nowSeconds());
+    if (pinned) await chrome.storage.local.set({ pins: pinned });
+    finish({ signed: signMessage(seed, content) });
     return {};
   } catch (e) {
     finish({ error: (e as Error).message });
     return {};
   }
+}
+
+// The person chose to forget a site's old key after seeing it change. Nothing is signed; the
+// site has to ask again, and is then treated as new.
+async function forgetPin(requestId: string): Promise<{ ok: boolean }> {
+  const reqData = await chrome.storage.session.get(`req_${requestId}`);
+  const req = reqData[`req_${requestId}`] as Pending | undefined;
+  if (!req || req.kind !== 'blocked') return { ok: false };
+  const pins = await loadPins();
+  delete pins[req.origin];
+  await chrome.storage.local.set({ pins });
+  await chrome.storage.session.remove(`req_${requestId}`);
+  pending.get(requestId)?.({ error: 'The site’s old key was forgotten. Ask again.' });
+  pending.delete(requestId);
+  return { ok: true };
 }
 
 // Session: decrypted seed stored in chrome.storage.session (cleared on browser close).

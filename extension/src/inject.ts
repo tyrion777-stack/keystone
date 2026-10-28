@@ -35,19 +35,40 @@
     });
   }
 
+  // A SignedMessage, as keystone-core reads it.
+  interface SignedMessage {
+    author: string;
+    content: string;
+    content_hash: string;
+    signature: string;
+  }
+
+  function signedFrom(r: Record<string, unknown>): SignedMessage {
+    const signed = r['signed'] as SignedMessage | undefined;
+    if (!signed) throw new Error((r['error'] as string) ?? 'Signing failed');
+    return signed;
+  }
+
   (window as unknown as Record<string, unknown>)['keystone'] = {
     isInstalled: true,
-    version: '0.1.0',
+    version: '0.2.0',
 
     async getPublicKey(): Promise<string | null> {
       const r = await send('GET_PUBKEY');
       return (r['pubkey'] as string) ?? null;
     },
 
-    async sign(challenge: string): Promise<{ signature: string; pubkey: string }> {
-      const r = await send('SIGN', { challenge });
-      if (!r['signature']) throw new Error((r['error'] as string) ?? 'Signing failed');
-      return { signature: r['signature'] as string, pubkey: r['pubkey'] as string };
+    // Sign in on this site. `challenge` is the service's single-use challenge: 16 to 64 bytes
+    // of lowercase hex. The result is a SignedMessage naming this site; the service checks it
+    // with keystone_core::verify_sign_in(signed, its origin, the challenge).
+    async signIn(challenge: string): Promise<SignedMessage> {
+      return signedFrom(await send('SIGN_IN', { challenge }));
+    },
+
+    // Answer a service's signed request (keystone_core::ServiceRequest). It must be for this
+    // site. The result is the approval; the service checks it with verify_approval.
+    async approve(request: SignedMessage): Promise<SignedMessage> {
+      return signedFrom(await send('APPROVE', { request }));
     },
   };
 })();

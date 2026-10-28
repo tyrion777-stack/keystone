@@ -3,10 +3,10 @@ name: Extension
 on:
   push:
     branches: [master]
-    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "wasm/**", "core/src/**", "core/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "test-vectors/**", ".github/workflows/extension.yml"]
   pull_request:
     branches: [master]
-    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "wasm/**", "core/src/**", "core/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "test-vectors/**", ".github/workflows/extension.yml"]
 
 jobs:
   build:
@@ -23,6 +23,13 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: extension/package-lock.json
+
+      # The extension runs keystone-core's checks as WebAssembly, built from wasm/ before each
+      # npm step below (npm run wasm).
+      - name: Install Rust (version and wasm target from rust-toolchain.toml)
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
 
       - run: npm ci
       - run: npm run typecheck

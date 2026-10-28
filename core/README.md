@@ -155,6 +155,32 @@ let token = create_jwt(&user);
 Ok(Json(json!({ "token": token })))
 ```
 
+### Sign-in from the browser extension (bound to your site)
+
+A bare signed challenge says nothing about where it was signed: a page on another site could
+fetch your challenge, get it signed, and pass it on. The Keystone extension signs your origin
+together with the challenge, and you check both:
+
+```js
+// Your page. The challenge: 16 to 64 random bytes, lowercase hex, single use.
+const signed = await window.keystone.signIn(challenge);   // a SignedMessage
+await fetch('/auth/keystone', { method: 'POST', body: JSON.stringify(signed) });
+```
+
+```rust
+use keystone_core::{SignedMessage, verify_sign_in};
+
+let signed: SignedMessage = serde_json::from_slice(&body)?;
+// Your own origin, exactly as the browser shows it, and the challenge you issued.
+let person = verify_sign_in(&signed, "https://desk.example.com", &stored_challenge)?;
+mark_challenge_used(&stored_challenge).await?;
+let user = db.get_user_by_public_key(&person.to_wire()).await?;
+```
+
+A page can also hand the extension a signed request (see Signed Requests):
+`window.keystone.approve(signedRequest)` returns the approval. The extension refuses a request
+for any origin but the page's own, and pins your service key on first use.
+
 ### Passkeys (no app needed)
 
 Every phone browser can make a key in its own chip and unlock it with a fingerprint.
