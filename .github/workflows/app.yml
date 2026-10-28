@@ -3,10 +3,10 @@ name: App
 on:
   push:
     branches: [master]
-    paths: ["app/**", ".github/workflows/app.yml"]
+    paths: ["app/**", "wasm/**", "core/src/**", "core/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "test-vectors/**", ".github/workflows/app.yml"]
   pull_request:
     branches: [master]
-    paths: ["app/**", ".github/workflows/app.yml"]
+    paths: ["app/**", "wasm/**", "core/src/**", "core/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "test-vectors/**", ".github/workflows/app.yml"]
 
 jobs:
   build:
@@ -24,6 +24,14 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
 
+      # The app runs keystone-core's checks as WebAssembly, built from wasm/ before each npm
+      # step below (npm run wasm).
+      - name: Install Rust (version and wasm target from rust-toolchain.toml)
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
       - run: npm ci
       - run: npm run check
+      - run: npm test
       - run: npm run build
