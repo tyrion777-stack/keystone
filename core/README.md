@@ -13,8 +13,17 @@ A developer adds `keystone-core` as a dependency and gets:
 
 ```toml
 [dependencies]
-keystone-core = "0.1.0"
+keystone-core = "0.2"
 ```
+
+A service that only verifies keys, passkeys and signed requests can leave out the P2P stack
+(libp2p, tokio):
+
+```toml
+keystone-core = { version = "0.2", default-features = false }
+```
+
+Rust 1.87 or later.
 
 ---
 

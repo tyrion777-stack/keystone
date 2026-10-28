@@ -24,7 +24,7 @@
 - [x] Follow records travel peer-to-peer and verify on receipt
 - [x] Bootstrap node live (address passed with `--bootstrap`, not compiled in)
 - [x] Internet-wide peer discovery working
-- [x] Published on crates.io (v0.1.2) and GitHub
+- [x] Published on crates.io (v0.2.0) and GitHub
 
 ---
 
@@ -162,5 +162,5 @@ Build: `cd extension && npm run build` → load `dist/` unpacked in Chrome.
 |---|---|
 | Bootstrap node | Live (address in config, not in the code) |
 | Peer ID | 12D3KooWCruYnFTDrFoNPtHpaGPcWm4NvfzjyS7uVqWCBimievS2 |
-| crates.io | keystone-core v0.1.2 |
+| crates.io | keystone-core v0.2.0 |
 | GitHub | github.com/tyrion777-stack/keystone-core |

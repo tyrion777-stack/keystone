@@ -36,3 +36,7 @@ jobs:
 
       - name: Test
         run: cargo test --workspace --all-features
+
+      # Services verifying passkeys and requests build without the P2P stack.
+      - name: Test without networking
+        run: cargo test -p keystone-core --no-default-features
