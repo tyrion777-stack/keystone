@@ -81,7 +81,8 @@ Keystone should accept that key as an identity, so a service can start before th
       parsing, and no attestation, since the service links a person standing in front of it
 - [x] Vectors in `test-vectors/webauthn.json`: real output from Chrome's virtual authenticator,
       plus edge cases signed with OpenSSL
-- [ ] A small JS helper a service drops into its page: register, then sign a challenge (2b)
+- [x] A small JS helper a service drops into its page: register, then sign a challenge
+      (`js/keystone-passkey.js`; its real output from Chrome is in the vectors)
 - [x] Note in the docs: synced passkeys (Google, Apple) are hardware-made but copied, encrypted,
       to the person's other devices; a FIDO card is the strictly device-bound option
 

@@ -149,9 +149,22 @@ Ok(Json(json!({ "token": token })))
 ### Passkeys (no app needed)
 
 Every phone browser can make a key in its own chip and unlock it with a fingerprint.
-Keystone verifies those keys too. Your page calls `navigator.credentials.create()` once
-to link, then `navigator.credentials.get()` to sign in, and sends the browser's output
-(base64url) to your server:
+Keystone verifies those keys too. Drop `js/keystone-passkey.js` (no dependencies) into
+your page:
+
+```js
+import { linkPasskey, signInWithPasskey } from './keystone-passkey.js';
+
+// Link, once. Store the verified key and credentialId against your record.
+const { credentialId, registration } = await linkPasskey({
+  challenge, rpId: 'example.com', rpName: 'Front desk', userName: 'visitor-0001' });
+
+// Check in. No username needed: the person picks their passkey.
+const { credentialId, assertion } = await signInWithPasskey({ challenge, rpId: 'example.com' });
+```
+
+Send the result to your server. For a sign-in, add `author`: the stored `p256:…` key
+for that `credentialId`.
 
 ```rust
 use keystone_core::{WebAuthnAssertion, WebAuthnExpectations, WebAuthnRegistration};

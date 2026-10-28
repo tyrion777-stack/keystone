@@ -1,10 +1,11 @@
 """Builds test-vectors/webauthn.json.
 
-Usage: python3 -I gen_webauthn.py chrome_capture.json > ../webauthn.json
+Usage: python3 -I gen_webauthn.py chrome_capture.json helper_capture.json > ../webauthn.json
 
-chrome_capture.json comes from capture_webauthn.js (a real registration and assertion from
-Chrome's virtual authenticator). The other cases are signed here with OpenSSL (via the
-`cryptography` package), independently of the Rust code that verifies them.
+chrome_capture.json comes from capture_webauthn.js (the raw browser API) and helper_capture.json
+from capture_passkey_helper.js (js/keystone-passkey.js), both run against Chrome's virtual
+authenticator. The other cases are signed here with OpenSSL (via the `cryptography` package),
+independently of the Rust code that verifies them.
 """
 
 import base64
@@ -70,6 +71,35 @@ for name, field, value in [
         "message": {"author": real_author, **real_asn["message"]},
     })
 
+# --- Real Chrome output, through js/keystone-passkey.js ----------------------------------
+helper = json.load(open(sys.argv[2]))
+helper_expect = {"origin": helper["origin"], "rp_id": helper["rp_id"], "require_user_verification": True}
+helper_author = wire(load_der_public_key(unb64u(helper["registration"]["message"]["public_key"])))
+
+
+def count(msg):
+    return int.from_bytes(unb64u(msg["authenticator_data"])[33:37], "big")
+
+
+cases.append({
+    "name": "helper_registration",
+    "kind": "registration",
+    "valid": True,
+    "expect": {**helper_expect, "challenge": helper["registration"]["challenge"]},
+    "message": helper["registration"]["message"],
+    "author": helper_author,
+    "sign_count": count(helper["registration"]["message"]),
+})
+for a in helper["assertions"]:
+    cases.append({
+        "name": f"helper_assertion_{a['name']}",
+        "kind": "assertion",
+        "valid": True,
+        "expect": {**helper_expect, "challenge": a["challenge"]},
+        "message": {"author": helper_author, **a["message"]},
+        "sign_count": count(a["message"]),
+    })
+
 # --- Edge cases signed here --------------------------------------------------------------
 key = ec.derive_private_key(int("0b" * 32, 16), ec.SECP256R1())
 author = wire(key.public_key())
@@ -127,7 +157,7 @@ case("ed25519_author", False, {**assertion(auth_data(), client_data()), "author"
      note="A valid Ed25519 key (from signed_message.json). Only P-256 passkeys for now.")
 
 print(json.dumps({
-    "description": "WebAuthn (passkey) verification vectors. chrome_* cases are real output from Chrome's "
+    "description": "WebAuthn (passkey) verification vectors. chrome_* and helper_* cases are real output from Chrome's "
                    "virtual authenticator; the rest are signed with OpenSSL. Every implementation must agree "
                    "on `valid`, and on `sign_count` and `author` where given. Byte fields are base64url "
                    "without padding.",
