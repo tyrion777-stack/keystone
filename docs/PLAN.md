@@ -1,7 +1,7 @@
 # Keystone — The Full Plan
 
 This document captures where Keystone is going, why, and how to get there.
-It covers everything from immediate DeltaType hardening through the long-term
+It covers everything from hardening the first production integration through the long-term
 vision of a universal internet identity layer. Read PHILOSOPHY.md first for
 the foundational thinking behind these decisions.
 
@@ -39,7 +39,7 @@ P2P layer:
   Kademlia DHT — distributed WAN peer routing
   Request-response data transfer between peers
 
-DeltaType integration (live in production):
+First production integration (live):
   Challenge-response auth via keystone-sidecar
   Browser-side key generation (Argon2id + AES-256-GCM encrypted localStorage)
   Enrollment token flow — add new devices
@@ -88,7 +88,7 @@ architectural decision. Full reasoning in PHILOSOPHY.md.
 
 ## Phase 1 — Lock Down the Testing Ground
 
-**Outcome:** Keystone is the only way into DeltaType. Reliable under real
+**Outcome:** Keystone is the only way into the first production app. Reliable under real
 conditions. One key signs you into every client site with no per-site setup.
 
 **Timeline: one week.**
@@ -153,13 +153,13 @@ Store your pubkey once on the server. Every new client gets it automatically.
 
 ```bash
 # Run once on the server:
-echo 'your_64_char_pubkey_hex' > ~/.deltatype_operator
+echo 'your_64_char_pubkey_hex' > ~/.keystone_operator
 
 # new-client.sh reads it:
-OPERATOR_PUBKEY=$(cat ~/.deltatype_operator 2>/dev/null)
+OPERATOR_PUBKEY=$(cat ~/.keystone_operator 2>/dev/null)
 if [ -z "$OPERATOR_PUBKEY" ]; then
-  echo "Error: ~/.deltatype_operator not found."
-  echo "Create it: echo 'your_pubkey' > ~/.deltatype_operator"
+  echo "Error: ~/.keystone_operator not found."
+  echo "Create it: echo 'your_pubkey' > ~/.keystone_operator"
   exit 1
 fi
 # Seeds settings table with OPERATOR_PUBKEY during setup
@@ -237,9 +237,9 @@ One master key. A unique derived subkey per deployment domain.
 ```
 Master keypair   (never transmitted, lives on device)
     ↓  BLAKE3(master_private + domain)
-App subkey for deltatype.com
-App subkey for clientsite.com
-App subkey for anothersite.com
+App subkey for site-a.example
+App subkey for site-b.example
+App subkey for site-c.example
 ```
 
 Each site sees a different pubkey. No site can correlate you with
@@ -293,7 +293,7 @@ Keystone can spread beyond your own sites.
 
 **Timeline: four weeks.**
 
-Extract the auth logic from DeltaType into standalone packages:
+Extract the auth logic from the first production app into standalone packages:
 
 **`keystone-client`** — npm package for frontends.
 `generateKey()`, `saveKey(password)`, `loadKey(password)`,
@@ -538,7 +538,7 @@ Charge everyone else to reach them.
 ## The Timeline
 
 ```
-Now          Phase 1   DeltaType locked. One key, all sites. No passwords.
+Now          Phase 1   First app locked. One key, all sites. No passwords.
 Week 4       Phase 2   Key rotation. Device transfer. Devices are portals.
 Month 2      Phase 3   Browser extension. Universal identity in the browser.
 Month 3      Phase 4   Protocol standalone. Any developer integrates.
