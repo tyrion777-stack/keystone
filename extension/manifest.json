@@ -3,7 +3,8 @@
   "name": "Keystone",
   "version": "0.1.0",
   "description": "Your cryptographic identity for the web. Sign in anywhere — no passwords, no accounts.",
-  "permissions": ["storage", "windows"],
+  "permissions": ["storage", "windows", "tabs"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"
