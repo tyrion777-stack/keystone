@@ -13,11 +13,11 @@ window.addEventListener('message', async (event) => {
     if (type === 'GET_PUBKEY') {
       const r = await chrome.runtime.sendMessage({ type: 'GET_PUBKEY' });
       window.postMessage({ __ks_resp: id, ...(r as object) }, '*');
-    } else if (type === 'SIGN') {
-      const r = await chrome.runtime.sendMessage({
-        type: 'SIGN_REQUEST',
-        challenge: msg['challenge'],
-      });
+    } else if (type === 'SIGN_IN') {
+      const r = await chrome.runtime.sendMessage({ type: 'SIGN_IN_REQUEST', challenge: msg['challenge'] });
+      window.postMessage({ __ks_resp: id, ...(r as object) }, '*');
+    } else if (type === 'APPROVE') {
+      const r = await chrome.runtime.sendMessage({ type: 'APPROVE_REQUEST', request: msg['request'] });
       window.postMessage({ __ks_resp: id, ...(r as object) }, '*');
     }
   } catch (e) {
