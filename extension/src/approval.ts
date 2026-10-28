@@ -1,3 +1,6 @@
+// A module, as Vite bundles it: without this, tsc reads every page script as one global scope.
+export {};
+
 const params = new URLSearchParams(window.location.search);
 const requestId = params.get('id');
 
