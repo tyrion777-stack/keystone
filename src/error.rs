@@ -8,6 +8,9 @@ pub enum KeystoneError {
     #[error("Unsupported key algorithm: {0}")]
     UnsupportedAlgorithm(String),
 
+    #[error("Passkey check failed: {0}")]
+    WebAuthn(String),
+
     #[error("Invalid public key: {0}")]
     InvalidPublicKey(String),
 
