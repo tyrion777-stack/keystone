@@ -3,7 +3,8 @@ import { blake3 } from '@noble/hashes/blake3';
 import { argon2id } from '@noble/hashes/argon2';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
-// Argon2id: 64 MB, 3 passes — matches keystone-core's offline-attack resistance target
+// Argon2id: 64 MiB, 3 passes. Stronger than keystone-core, which uses the argon2 crate's
+// defaults (19 MiB, 2 passes); the two blob formats are not interchangeable either way.
 const ARGON2_PARAMS = { m: 65536, t: 3, p: 1, dkLen: 32 };
 
 // Blob formats (decoded):

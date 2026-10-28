@@ -10,6 +10,7 @@ import {
 import { blake3 } from '@noble/hashes/blake3';
 import { bytesToHex as b3Hex } from '@noble/hashes/utils';
 import { isSignInChallenge } from './signing-policy';
+import { isPairingOrigin, isRelayUrl } from './pairing';
 
 // In-flight sign requests waiting on the approval window: requestId → resolve
 const pending = new Map<string, (result: SignResult) => void>();
@@ -272,15 +273,19 @@ async function addDeviceInit(origin: string): Promise<Record<string, unknown>> {
   const pubkeyHex = storage['pubkeyHex'] as string | undefined;
   if (!pubkeyHex) return { ok: false, error: 'No key configured' };
 
-  let challenge: string;
+  if (!isPairingOrigin(origin)) return { ok: false, error: 'Devices can be added on https sites only' };
+
+  let challenge: unknown;
   try {
     const res = await fetch(`${origin}/api/auth/keystone?pubkey=${pubkeyHex}`);
     if (!res.ok) throw new Error();
-    const data = await res.json() as { challenge: string };
+    const data = await res.json() as { challenge?: unknown };
     challenge = data.challenge;
   } catch {
     return { ok: false, error: 'Could not reach site — make sure you are on a Keystone-enabled page' };
   }
+  // The site chose this text, so it gets the same rule as any page: a sign-in challenge or nothing.
+  if (!isSignInChallenge(challenge)) return { ok: false, error: 'The site sent something other than a sign-in challenge' };
 
   const blake3Hash = b3Hex(blake3(new TextEncoder().encode(challenge)));
   const sig = signChallenge(session, challenge);
@@ -302,7 +307,10 @@ async function addDeviceInit(origin: string): Promise<Record<string, unknown>> {
       const err = await res.json().catch(() => ({})) as { message?: string };
       return { ok: false, error: err.message ?? 'Pairing init failed' };
     }
-    const { deviceChallenge, relay } = await res.json() as { deviceChallenge: string; relay: string };
+    const { deviceChallenge, relay } = await res.json() as { deviceChallenge?: unknown; relay?: unknown };
+    // Both end up in the QR the phone scans, so check them here rather than trust the site.
+    if (!isSignInChallenge(deviceChallenge)) return { ok: false, error: 'The site sent a bad device challenge' };
+    if (!isRelayUrl(relay)) return { ok: false, error: 'The site sent a bad relay address' };
     return { ok: true, pairingId, deviceChallenge, relay };
   } catch {
     return { ok: false, error: 'Network error during pairing init' };
@@ -315,6 +323,7 @@ async function addDeviceConfirm(
   pubkey: string,
   signature: string,
 ): Promise<Record<string, unknown>> {
+  if (!isPairingOrigin(origin)) return { ok: false, error: 'Devices can be added on https sites only' };
   try {
     const res = await fetch(`${origin}/api/auth/keystone/device`, {
       method: 'PUT',

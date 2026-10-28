@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { parsePhoneReply } from './pairing';
 
 type View = 'setup' | 'backup' | 'locked' | 'main' | 'device';
 
@@ -104,25 +105,39 @@ el('m-pubkey').addEventListener('click', () => {
 
 let deviceWs: WebSocket | null = null;
 
-el('m-add-device').addEventListener('click', async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url) return;
-
-  let origin: string;
+// The site in the active tab, read when the popup opens (activeTab lets us see it then). It is
+// read ahead so the click below can ask for access straight away: Chrome only shows the
+// permission prompt while the click is still being handled.
+let tabOrigin: string | null = null;
+chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
   try {
-    origin = new URL(tab.url).origin;
+    if (tab?.url) tabOrigin = new URL(tab.url).origin;
   } catch {
-    return;
+    tabOrigin = null;
   }
+});
+
+el('m-add-device').addEventListener('click', async () => {
+  const origin = tabOrigin;
+  if (!origin) return;
+
+  // Access to this one site, asked for now, not every site at install.
+  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] }).catch(() => false);
 
   // Reset device view
-  el('d-site').textContent = new URL(tab.url).hostname;
+  el('d-site').textContent = origin;
   el('d-status').textContent = 'Connecting…';
   el<HTMLImageElement>('d-qr').hidden = true;
   el('d-error').textContent = '';
   el<HTMLElement>('d-success').hidden = true;
   deviceWs?.close();
   show('device');
+
+  if (!granted) {
+    el('d-error').textContent = 'Keystone needs access to this site to add a device';
+    el('d-status').textContent = '';
+    return;
+  }
 
   const result = await send({ type: 'ADD_DEVICE_INIT', origin }) as Record<string, unknown>;
   if (!result['ok']) {
@@ -143,7 +158,7 @@ el('m-add-device').addEventListener('click', async () => {
     pairingId,
     challenge: deviceChallenge,
     relay,
-    origin: new URL(tab.url).hostname,
+    origin,
   });
 
   const dataUrl = await QRCode.toDataURL(payload, { width: 240, margin: 1, color: { dark: '#000', light: '#fff' } });
@@ -161,7 +176,13 @@ el('m-add-device').addEventListener('click', async () => {
     qrImg.hidden = true;
     el('d-status').textContent = 'Verifying…';
 
-    const { pubkey, signature } = JSON.parse(e.data as string) as { pubkey: string; signature: string };
+    const reply = parsePhoneReply(e.data);
+    if (!reply) {
+      el('d-status').textContent = '';
+      el('d-error').textContent = 'The phone sent a reply Keystone cannot read';
+      return;
+    }
+    const { pubkey, signature } = reply;
     const confirm = await send({ type: 'ADD_DEVICE_CONFIRM', origin, pairingId, pubkey, signature }) as Record<string, unknown>;
 
     if (confirm['ok']) {
