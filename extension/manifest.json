@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Keystone",
+  "version": "0.1.0",
+  "description": "Your cryptographic identity for the web. Sign in anywhere — no passwords, no accounts.",
+  "permissions": ["storage", "windows"],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/inject.ts"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.ts"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Keystone"
+  }
+}
