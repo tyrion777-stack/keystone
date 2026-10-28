@@ -1,0 +1,225 @@
+{
+  "description": "Sign-in bound to a site (core/src/sign_in.rs). The browser signs {kind:'keystone.signin',v:1,origin,challenge} with the SignedMessage rule; the service accepts only its own origin and the challenge it issued. Every implementation must agree on `valid` for every case.",
+  "cases": [
+    {
+      "name": "valid",
+      "valid": true,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "c0de0690466ba637fd7a2c06419c9c2f4ed1538809f6f70f662296c840ecadcd",
+        "signature": "f669a2e3dd6068997df984b22bfa2441e9bdcf9d4f5974a48e85a9e0a325e805f295d698717e7ec48e3d68e3d82c4108596727ad8bc352e01330ddf33bf99f08"
+      },
+      "note": "sign_in_content(origin, challenge) must produce exactly this content."
+    },
+    {
+      "name": "valid_p256_person",
+      "valid": true,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "p256:03e8c6606dc8ddddae0eba2341debe10455a32aefcfd5da9226f310d38ea49ae51",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "c0de0690466ba637fd7a2c06419c9c2f4ed1538809f6f70f662296c840ecadcd",
+        "signature": "1e566d5b0b97b1c37a5909edd898ef520274391f5e8c742a83b73340889cf35c6bd5960f4bb5026e5d8cb30afbbb7f4930a3366e686e49cee8e1e1da893acc2f"
+      }
+    },
+    {
+      "name": "valid_localhost",
+      "valid": true,
+      "expected_origin": "http://localhost:5173",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"http://localhost:5173\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "2efe2a2c5e2412dfab32faaf0b0665e5fbbe560108ac28fb8e0c82560aaf03ff",
+        "signature": "c9a3db0034bacdf4f7aa87586783e066e5ece28c24b7363d66e194a364de860e7704a98f3d283b96ee1e0cb6c1bd86ccc245edcc3792427d7a28216598452c02"
+      }
+    },
+    {
+      "name": "signed_on_another_site",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://other.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "4b0459f8f92222e5d8d8e754190b3f9329c781ef6e9585657c957917849cf2e7",
+        "signature": "8716c3ca830265c0b52447122d927cc9d0fb87d82e1aa971fcf5bca371cc5dc3f7f6c2b4d3ae92afdd7c9a3f04cb939b247bed6ee8552918e312ccfd93f57108"
+      },
+      "note": "The phishing case: a real challenge, signed on the wrong site."
+    },
+    {
+      "name": "other_challenge",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5\"}",
+        "content_hash": "6cb114d4ce1a0572ce04eb811846ff54836bdecd12aed0f3ef72b936b7ac5812",
+        "signature": "239b8bef74b05e363159e7acb93f626051c078225923b8a9425c4d4aad6b00bbe097a524e8bb7c13df8fb6384acaabc012c43f62384dc41e1d69ffaffb97e900"
+      }
+    },
+    {
+      "name": "expected_origin_differs_only_by_slash",
+      "valid": false,
+      "expected_origin": "https://desk.example.com/",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "c0de0690466ba637fd7a2c06419c9c2f4ed1538809f6f70f662296c840ecadcd",
+        "signature": "f669a2e3dd6068997df984b22bfa2441e9bdcf9d4f5974a48e85a9e0a325e805f295d698717e7ec48e3d68e3d82c4108596727ad8bc352e01330ddf33bf99f08"
+      }
+    },
+    {
+      "name": "wrong_kind",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.approval\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "14055a4af8cc167b9690901ed6645fd8ed0a7b6d8a44dffb11212b07ada7f9b4",
+        "signature": "5ba6979299d5b66a5481cb6b28853ad14ddd8ee1db06d75a8088579111451c04578c8074779e1c7eac6e39ec2e6920dbbecb83ab9241f4c9933f3e95b02f9c03"
+      }
+    },
+    {
+      "name": "wrong_version",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":2,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "6d80d82846281e9075f459a9c8ef678bec112b66faeff3d9cce9ec0d9e5877e0",
+        "signature": "92eac89cd3885f116cfa871c51321afea68ee46cfc3131f5bb7b95918435347cf3f78dd9f09894758c4595a983d3fc1c1cc37b1bfe4b5423e617988b76f60102"
+      }
+    },
+    {
+      "name": "unknown_field",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\",\"next\":\"/admin\"}",
+        "content_hash": "90697576d3767664216c7843c533f810837a6041d34e273de5daf50294fcb6fe",
+        "signature": "08288758a3ad3edd14b43f329d6fa305576de3c9a7d21e8fa7665aa1080cde2c6bdbd44f2cfd15e5f0c6d2967d921ea51b92b2e5f0bd2eb86aaf246ca39e2f07"
+      }
+    },
+    {
+      "name": "duplicate_origin",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://other.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\",\"origin\":\"https://desk.example.com\"}",
+        "content_hash": "1e6cfeb12ed060f3ff751d6282abee2903813cc252a275df8803525888746820",
+        "signature": "937caf40fb3bc2a382ce59b9b98ece603a52d2082ac327025766ddec6e89f3953592841845a900471a2d79b519bc7db465ec5dd4beb3e23fa7e9df4e07d7f503"
+      },
+      "note": "A second origin must not override the first."
+    },
+    {
+      "name": "missing_challenge",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\"}",
+        "content_hash": "e7ba0f4677c95a28dbad9bee3c5a761f937b9be3bf3b03ee9db284f5507cdd1d",
+        "signature": "ddd11005ed66003b18858346e3f90e31cbf5ffa0d87ae0b4f0452a4cb0177169fade3ec320bc455142d1c8f226d0dbf5d904bbb3e4040187d6a7378a8534cb0e"
+      }
+    },
+    {
+      "name": "challenge_uppercase",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4C4\"}",
+        "content_hash": "b2364815a8e2340b945184d6d443bd825ae2be6af38c0a30959a6431f853887f",
+        "signature": "ac075f6c85cabf76608ee6c57c61eb776b3cc53116f9685da4bb29caf49cda82029d5c1f78b476c07d9029ace5a1dd267423526f8e6eb1bec05a1f149faef203"
+      }
+    },
+    {
+      "name": "challenge_too_short",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "7109ed055b2c73f280bcbc789f66eeb2d7cc6ff0ed198e16c528f6c56e6564be",
+        "signature": "fc572b58179b16f35b3378f2f87f472b57970eb17abffd1efecabbdf43e482b5b2a0eeb876c7645e65691d1b44524a2f3cbdc611e7af068b8dbb81c419861c03"
+      }
+    },
+    {
+      "name": "origin_with_path",
+      "valid": false,
+      "expected_origin": "https://desk.example.com/login",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://desk.example.com/login\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "e28e41b22526dcb14f13eabbda2872235a0fbde8b1d7ee01b7b5194593de47ed",
+        "signature": "07fa70032f25dac7dc1cf2498b3b181e912fc09c17d923f010a58859e95e09f7d9e06b00cd0167eacf5f52d8c75118ba284f180dd70f8f0eecbbb11c73fd4c0b"
+      }
+    },
+    {
+      "name": "origin_http",
+      "valid": false,
+      "expected_origin": "http://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"http://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "e1b195f9d28ce20938d9c0befd8e623ec9ced35b6ec2c8e11928996d331228eb",
+        "signature": "a2d78e55dc267e1ea397bfef9a69137c6ddb55751e2e3430c05fa9fb252b6970a0bc1d7bb4972bfeaa18a401b8fe0a15228a1da5adc84faa79f35e4d0a471b0e"
+      }
+    },
+    {
+      "name": "not_json",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+        "content_hash": "27a5e0d3cccb2cc9e86ea37bc02e165aa93d8106f732a2e134db8d09bad90b7a",
+        "signature": "5764fdb6f048a3a2e5d61093a34e46f997e45654d4b0615a4edba61784a11da3e787edc96ce9eeca0c98f6c6beb8b20839d9bec2a3200bc76c94eb612d53c405"
+      },
+      "note": "A bare challenge, as signed before sign-in was bound to a site."
+    },
+    {
+      "name": "v_as_string",
+      "valid": false,
+      "expected_origin": "https://desk.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":\"1\",\"origin\":\"https://desk.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "25b2508ef65db3113d5a62f0d4d3e15b1740e441cfb0473c25321faa7d95604a",
+        "signature": "d46dfef6d506b0ede7bcef61998cd75c09615b56a8ecd2ae2ec91be1448a0508361e69dc5425dfd10552950ee98f87557d2094002a04b728d7fc903ee716ca0e"
+      }
+    },
+    {
+      "name": "content_changed_after_signing",
+      "valid": false,
+      "expected_origin": "https://other.example.com",
+      "expected_challenge": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+      "signed": {
+        "author": "91a28a0b74381593a4d9469579208926afc8ad82c8839b7644359b9eba9a4b3a",
+        "content": "{\"kind\":\"keystone.signin\",\"v\":1,\"origin\":\"https://other.example.com\",\"challenge\":\"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4\"}",
+        "content_hash": "c0de0690466ba637fd7a2c06419c9c2f4ed1538809f6f70f662296c840ecadcd",
+        "signature": "f669a2e3dd6068997df984b22bfa2441e9bdcf9d4f5974a48e85a9e0a325e805f295d698717e7ec48e3d68e3d82c4108596727ad8bc352e01330ddf33bf99f08"
+      }
+    }
+  ]
+}
