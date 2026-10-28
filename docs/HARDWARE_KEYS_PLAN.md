@@ -42,6 +42,34 @@ work. Examples use a generic "front desk".
 
 ---
 
+## Root key and device keys
+
+A person is their **root key**, not any one device. Devices carry keys of their own, and the
+root vouches for each of them.
+
+```
+        ROOT KEY   Ed25519 today, Ed25519 + ML-DSA later (stage 7)
+        the person's permanent identity; signs rarely
+              │  signs: "this device key may act for me"
+     ┌────────┼────────────┐
+     ▼        ▼            ▼
+ phone key  passkey    FIDO card      P-256 (or Ed25519) inside a chip; cannot be copied
+```
+
+- The root lives in the app, encrypted (Argon2id + AES-256-GCM), with a backup. It needs no
+  special hardware, so it can move to a quantum-safe algorithm on Keystone's schedule, not
+  the chip makers'.
+- Device keys do the everyday signing: check-in, tap, approve. They are whatever the chip
+  supports, and are replaced device by device as chips improve.
+- A service links to the **root**. Losing a phone removes one device key; the person stays
+  the same person, and their links keep working.
+- A device key alone is never a permanent identity. Someone who starts with only a passkey
+  (stage 2) has a device-only identity until they get the app; the app's new root then
+  adopts that passkey, so the service's existing link keeps working.
+- Existing Ed25519 identities become roots as they are. Nothing anyone holds today changes.
+
+---
+
 ## Stage 1 — Two key types
 
 Phones keep keys in hardware, and the hardware decides the curve:
@@ -87,7 +115,7 @@ Keystone should accept that key as an identity, so a service can start before th
       to the person's other devices; a FIDO card is the strictly device-bound option
 
 When the app arrives it offers the same flow with a key it holds itself, and the service's code
-does not change.
+does not change. The app's root key adopts the passkey as one of its devices (stage 5).
 
 ## Stage 3 — Signed requests from a service
 
@@ -112,20 +140,29 @@ of the loop.
 | 2 | Rate, count, size and age limits per key and per IP | Same |
 | 3 | Rooms carry messages both ways, more than one | "Approved, please wait" back to the phone |
 | 4 | Mailboxes addressed to a public key, held until collected, then deleted; an expiry | The recipient may be offline |
-| 5 | End-to-end encryption (X25519 envelopes, see `RELAY_AND_ENCRYPTION_PLAN.md`) | The relay only ever holds ciphertext |
+| 5 | End-to-end encryption: hybrid X25519 + ML-KEM envelopes (see `RELAY_AND_ENCRYPTION_PLAN.md`) | The relay only ever holds ciphertext, and ciphertext recorded today must not open to a quantum computer later |
 | 6 | A long-lived outbound subscriber: a service connects out and collects its mail | A service can stay private, with nothing open to the internet |
 | 7 | Storage on disk, so more than one relay can run and a restart loses nothing | Mail must survive restarts |
 | 8 | Waking a phone without a vendor push service (for example a self-hosted UnifiedPush or ntfy), or the app checks when opened | No dependence on Google or Apple to deliver |
 
 Order: 1, 2, 3 first (safe in public), then 4, 5, 6, then 7, 8.
 
-## Stage 5 — Devices and revocation
+## Stage 5 — Root, devices and revocation
 
-- [ ] An identity lists its devices: a signed record of the keys allowed to act for it
-- [ ] Adding a device stays the existing `ks_add_device` flow
-- [ ] Revoking reuses the DHT revocation records (Phase 3); the relay and verifiers check them
-- [ ] A person with no other device is re-linked by the service in person; that is the service's
-      decision, recorded as a revocation like any other
+The centre of the design above.
+
+- [ ] A device certificate: the root signs "device key `p256:…` may act for me", with the
+      date it was added and what it may do
+- [ ] Verifiers follow the chain: a message signed by a device key, plus a valid certificate
+      from the root, is a message from the root
+- [ ] An identity's device list: the current set of certificates, signed by the root
+- [ ] Adding a device stays the existing `ks_add_device` flow, now issuing a certificate
+- [ ] Adopting a passkey: a passkey-only identity (stage 2) gains a root, and the service's
+      link moves from the passkey to the root in one signed step
+- [ ] Revoking a device: the root signs it out, using the DHT revocation records (Phase 3); the
+      relay and verifiers check them
+- [ ] A person who has lost every device and their root backup is re-linked by the service in
+      person; that is the service's decision, recorded as a revocation like any other
 
 ## Stage 6 — The app holds keys in hardware
 
@@ -136,6 +173,19 @@ Order: 1, 2, 3 first (safe in public), then 4, 5, 6, then 7, 8.
 - [ ] QR scanning on iPhone: Safari has no `BarcodeDetector`, so a JS decoder as fallback
 - [ ] Play Store release (after the DUNS number), with a public page that links the app and the extension
 
+## Stage 7 — Quantum-safe root
+
+A quantum computer would break both Ed25519 and P-256. Signatures only need to change before
+one exists; encryption is more urgent, because messages recorded today could be opened later
+(covered in stage 4, item 5).
+
+- [ ] A hybrid root: Ed25519 and ML-DSA both sign, and both must verify. A new key prefix, so
+      nothing existing changes
+- [ ] ML-DSA signatures are about 2.4 KB, too big for a QR; only the root uses them, and the root
+      signs rarely (certificates, revocations), so QR flows keep using device keys
+- [ ] Device keys move to quantum-safe algorithms when phone chips support them, one device at
+      a time, each vouched for by the root
+
 ---
 
 ## Open questions
@@ -145,3 +195,6 @@ Order: 1, 2, 3 first (safe in public), then 4, 5, 6, then 7, 8.
 - Passkey relying-party id: the service's own domain. Does Keystone want a shared domain for
   services that have none?
 - Who runs the public relay, and what are its limits for free use?
+- Root key backup and recovery: an encrypted backup only, or also recovery through trusted
+  people (web of trust)? Decide before stage 5.
+- Do phone chips (Secure Enclave, StrongBox) support ML-DSA signing yet? Check before stage 7.
