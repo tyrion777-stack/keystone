@@ -9,6 +9,7 @@ import {
 } from './crypto';
 import { blake3 } from '@noble/hashes/blake3';
 import { bytesToHex as b3Hex } from '@noble/hashes/utils';
+import { isSignInChallenge } from './signing-policy';
 
 // In-flight sign requests waiting on the approval window: requestId → resolve
 const pending = new Map<string, (result: SignResult) => void>();
@@ -19,7 +20,28 @@ interface SignResult {
   error?: string;
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+// A web page reaches the worker only through content.ts, and only with these two messages.
+// Everything else (setup, unlock, approving a request) comes from the extension's own pages.
+const PAGE_MESSAGES = new Set(['GET_PUBKEY', 'SIGN_REQUEST']);
+
+function isExtensionPage(sender: chrome.runtime.MessageSender): boolean {
+  return sender.id === chrome.runtime.id && (sender.url ?? '').startsWith(chrome.runtime.getURL(''));
+}
+
+// The origin of the page that sent the message, as the browser reports it. Never a field of the
+// message itself, which the page could set.
+function senderOrigin(sender: chrome.runtime.MessageSender): string | null {
+  try {
+    const origin = sender.origin ?? new URL(sender.url ?? '').origin;
+    return /^https?:\/\//.test(origin) ? origin : null;
+  } catch {
+    return null;
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!isExtensionPage(sender) && !PAGE_MESSAGES.has(msg?.type)) return false;
+
   switch (msg.type) {
     case 'CHECK_SETUP':
       chrome.storage.local.get('encryptedSeed').then(d => {
@@ -53,12 +75,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       chrome.storage.session.remove('session').then(() => sendResponse({ ok: true }));
       return true;
 
-    case 'SIGN_REQUEST':
-      handleSignRequest(msg.challenge as string, msg.origin as string).then(sendResponse);
+    case 'SIGN_REQUEST': {
+      const origin = senderOrigin(sender);
+      if (isExtensionPage(sender) || !origin) {
+        sendResponse({ error: 'Sign requests come from web pages only' });
+        return false;
+      }
+      handleSignRequest(msg.challenge, origin).then(sendResponse);
       return true;
+    }
 
     case 'SIGN_APPROVED':
-      handleApproved(msg.requestId as string, msg.password as string).then(sendResponse);
+      handleApproved(msg.requestId as string, msg.password as string | undefined).then(sendResponse);
       return true;
 
     case 'SIGN_DENIED':
@@ -67,9 +95,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       return false;
 
     case 'GET_PENDING':
-      chrome.storage.session.get(`req_${msg.requestId as string}`).then(d => {
-        sendResponse(d[`req_${msg.requestId as string}`] ?? null);
-      });
+      Promise.all([chrome.storage.session.get(`req_${msg.requestId as string}`), getSession()]).then(
+        ([d, session]) => {
+          const req = d[`req_${msg.requestId as string}`];
+          sendResponse(req ? { ...req, unlocked: !!session } : null);
+        },
+      );
       return true;
 
     case 'ADD_DEVICE_INIT':
@@ -132,19 +163,13 @@ async function unlockWithPassword(password: string) {
   }
 }
 
-async function handleSignRequest(challenge: string, origin: string): Promise<SignResult> {
-  const session = await getSession();
-
-  if (session) {
-    // Already unlocked — sign immediately, no popup needed
-    const d = await chrome.storage.local.get('pubkeyHex');
-    return {
-      signature: signChallenge(session, challenge),
-      pubkey: d['pubkeyHex'] as string,
-    };
+// Every request opens the approval window, locked or not: the person sees which site is asking
+// before anything is signed. Unlocked only means no password is asked for.
+async function handleSignRequest(challenge: unknown, origin: string): Promise<SignResult> {
+  if (!isSignInChallenge(challenge)) {
+    return { error: 'Keystone signs sign-in challenges only' };
   }
 
-  // Locked — open approval window, wait for user
   const requestId = crypto.randomUUID();
   await chrome.storage.session.set({
     [`req_${requestId}`]: { challenge, origin },
@@ -163,39 +188,50 @@ async function handleSignRequest(challenge: string, origin: string): Promise<Sig
   });
 }
 
-async function handleApproved(requestId: string, password: string): Promise<{ error?: string }> {
+// No password means the person approved while unlocked: sign with the session seed.
+async function handleApproved(requestId: string, password: string | undefined): Promise<{ error?: string }> {
+  const finish = (result: SignResult) => {
+    pending.get(requestId)?.(result);
+    pending.delete(requestId);
+  };
+
   try {
+    const reqData = await chrome.storage.session.get(`req_${requestId}`);
+    const req = reqData[`req_${requestId}`] as { challenge: unknown } | undefined;
+    if (!req || !isSignInChallenge(req.challenge)) {
+      finish({ error: 'Request expired or already handled' });
+      return {};
+    }
+
     const storage = await chrome.storage.local.get(['encryptedSeed', 'pubkeyHex']);
     if (!storage['encryptedSeed']) {
-      pending.get(requestId)?.({ error: 'No key configured' });
-      pending.delete(requestId);
+      finish({ error: 'No key configured' });
       return {};
     }
 
     const encBlob = storage['encryptedSeed'] as string;
     let seed: Uint8Array;
-    try {
-      seed = await decryptSeed(encBlob, password);
-    } catch {
-      return { error: 'WRONG_PASSWORD' };
+    if (password) {
+      try {
+        seed = await decryptSeed(encBlob, password);
+      } catch {
+        return { error: 'WRONG_PASSWORD' };
+      }
+      if (needsMigration(encBlob)) {
+        await chrome.storage.local.set({ encryptedSeed: await encryptSeed(seed, password) });
+      }
+      await saveSession(seed);
+    } else {
+      const session = await getSession();
+      if (!session) return { error: 'LOCKED' };
+      seed = session;
     }
 
-    if (needsMigration(encBlob)) {
-      await chrome.storage.local.set({ encryptedSeed: await encryptSeed(seed, password) });
-    }
-    await saveSession(seed);
-
-    const reqData = await chrome.storage.session.get(`req_${requestId}`);
-    const req = reqData[`req_${requestId}`] as { challenge: string } | undefined;
     await chrome.storage.session.remove(`req_${requestId}`);
-
-    const signature = signChallenge(seed, req?.challenge ?? '');
-    pending.get(requestId)?.({ signature, pubkey: storage['pubkeyHex'] as string });
-    pending.delete(requestId);
+    finish({ signature: signChallenge(seed, req.challenge), pubkey: storage['pubkeyHex'] as string });
     return {};
   } catch (e) {
-    pending.get(requestId)?.({ error: (e as Error).message });
-    pending.delete(requestId);
+    finish({ error: (e as Error).message });
     return {};
   }
 }

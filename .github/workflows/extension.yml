@@ -3,10 +3,10 @@ name: Extension
 on:
   push:
     branches: [master]
-    paths: ["extension/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
   pull_request:
     branches: [master]
-    paths: ["extension/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
 
 jobs:
   build:
@@ -25,4 +25,5 @@ jobs:
           cache-dependency-path: extension/package-lock.json
 
       - run: npm ci
+      - run: npm test
       - run: npm run build

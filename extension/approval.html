@@ -68,8 +68,10 @@
     <div class="row-label">Challenge to sign</div>
     <div class="challenge" id="req-challenge"></div>
 
-    <label for="ap-pw">Enter your Keystone password to approve</label>
-    <input type="password" id="ap-pw" placeholder="Password" autofocus>
+    <div id="ap-pw-block" hidden>
+      <label for="ap-pw">Enter your Keystone password to approve</label>
+      <input type="password" id="ap-pw" placeholder="Password">
+    </div>
 
     <div class="actions">
       <button class="btn btn-deny"    id="deny-btn">Deny</button>

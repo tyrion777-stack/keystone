@@ -145,5 +145,17 @@ src/approval.ts     The window that appears when a site requests signing.
 - In session: decrypted seed lives in `chrome.storage.session` for 30
   minutes after unlock, then requires password again.
 - `chrome.storage.session` is cleared automatically when the browser closes.
-- The approval window always shows which site is asking before any signing
-  happens. The user can deny any request.
+- Every sign request opens the approval window, locked or not, and it shows
+  which site is asking (the origin Chrome reports, not one the page supplies).
+  Unlocked, approving is one click; locked, it takes the password. The user can
+  deny any request.
+- A page can get one thing signed: a sign-in challenge, lowercase hex of 16 to
+  64 bytes (`src/signing-policy.ts`). Approvals, follows and service requests
+  are signed with the same key and are all JSON, so a page can never get one of
+  them signed. Anything else is refused before a window opens.
+- Pages reach the worker with two messages only, `GET_PUBKEY` and
+  `SIGN_REQUEST`. Setup, unlock and approving come from the extension's own
+  pages; the worker ignores them from anywhere else.
+- Tests: `npm test` (unit, against `test-vectors/`), and `e2e/signing.js`,
+  which loads the built extension in Chrome and tries to get content signed
+  from a web page.
