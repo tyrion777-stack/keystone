@@ -34,7 +34,7 @@ content is self-verifying: it doesn't matter who hands it to you, the math prove
 
 ## What's Next
 
-### Real-World Integration ✓ DONE — DeltaType
+### Real-World Integration ✓ DONE
 - [x] Add `keystone-core` as dependency in a production app
 - [x] DB migration: `keystone_public_key` column on users table
 - [x] Challenge/response auth endpoints (alternative to existing login)

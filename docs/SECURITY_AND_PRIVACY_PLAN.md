@@ -192,7 +192,7 @@ or linked — the session keys no longer exist.
 ## 6. Cross-Device Sync
 
 ### Problem
-A Keystone identity lives on one device. If you log into DeltaType on
+A Keystone identity lives on one device. If you log into a site on
 your phone, you cannot use the same identity on your laptop without
 manually copying the private key file — which is insecure if done naively.
 
