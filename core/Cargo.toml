@@ -1,12 +1,19 @@
 [package]
 name = "keystone-core"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
+rust-version = "1.87"
 description = "Portable identity, signed social graph, and P2P transport primitives for the Keystone protocol"
 license = "MIT"
 repository = "https://github.com/tyrion777-stack/keystone"
 keywords = ["p2p", "identity", "ed25519", "libp2p", "decentralized"]
 categories = ["network-programming", "cryptography", "authentication"]
+
+[features]
+default = ["network"]
+# The P2P stack (libp2p, tokio) and the command-line programs. Turn it off to verify keys,
+# passkeys and signed requests with no networking in the build.
+network = ["dep:libp2p", "dep:tokio", "dep:futures", "dep:rpassword"]
 
 [dependencies]
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
@@ -16,14 +23,34 @@ serde_json = "1.0"
 rand = "0.8"
 hex = "0.4"
 thiserror = "1.0"
-libp2p = { version = "0.53", features = ["tcp", "noise", "yamux", "quic", "relay", "dcutr", "identify", "ping", "kad", "mdns", "request-response", "json", "cbor", "tokio", "macros"] }
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
+libp2p = { version = "0.53", optional = true, features = ["tcp", "noise", "yamux", "quic", "relay", "dcutr", "identify", "ping", "kad", "mdns", "request-response", "json", "cbor", "tokio", "macros"] }
+tokio = { version = "1.0", optional = true, features = ["full"] }
+futures = { version = "0.3", optional = true }
 argon2 = "0.5"
 aes-gcm = "0.10"
 x25519-dalek = { version = "2.0", features = ["static_secrets"] }
 hkdf = "0.12"
 sha2 = "0.10"
-rpassword = "7.0"
+rpassword = { version = "7.0", optional = true }
 p256 = { version = "0.13", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
 base64 = "0.22"
+
+[[bin]]
+name = "benchmark"
+required-features = ["network"]
+
+[[bin]]
+name = "bootstrap"
+required-features = ["network"]
+
+[[bin]]
+name = "demo"
+required-features = ["network"]
+
+[[bin]]
+name = "node"
+required-features = ["network"]
+
+[[bin]]
+name = "peer"
+required-features = ["network"]

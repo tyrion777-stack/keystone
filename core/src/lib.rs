@@ -4,6 +4,7 @@ pub mod error;
 pub mod follow;
 pub mod identity;
 pub mod key;
+#[cfg(feature = "network")]
 pub mod network;
 pub mod protocol;
 pub mod request;
