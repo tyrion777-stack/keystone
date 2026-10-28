@@ -1,5 +1,5 @@
 {
-  "description": "WebAuthn (passkey) verification vectors. chrome_* cases are real output from Chrome's virtual authenticator; the rest are signed with OpenSSL. Every implementation must agree on `valid`, and on `sign_count` and `author` where given. Byte fields are base64url without padding.",
+  "description": "WebAuthn (passkey) verification vectors. chrome_* and helper_* cases are real output from Chrome's virtual authenticator; the rest are signed with OpenSSL. Every implementation must agree on `valid`, and on `sign_count` and `author` where given. Byte fields are base64url without padding.",
   "cases": [
     {
       "name": "chrome_registration",
@@ -90,6 +90,61 @@
       }
     },
     {
+      "name": "helper_registration",
+      "kind": "registration",
+      "valid": true,
+      "expect": {
+        "origin": "http://localhost:8765",
+        "rp_id": "localhost",
+        "require_user_verification": true,
+        "challenge": "ZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5_gIGCg4Q"
+      },
+      "message": {
+        "public_key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdRAL6Gntc1QQJUxCLNs-wMDHi_mRD2HJLGpXHF65b29BPL-blTWTyPabR3Tt157wXlA--14x3ymS7PjLHMjN5Q",
+        "public_key_algorithm": -7,
+        "authenticator_data": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAQECAwQFBgcIAQIDBAUGBwgAIIpawz_JF5tRgBh1oR0oeJihJq0gWINll6M7bKs_WiBTpQECAyYgASFYIHUQC-hp7XNUECVMQizbPsDAx4v5kQ9hySxqVxxeuW9vIlggQTy_m5U1k8j2m0d07dee8F5QPvteMd8pkuz4yxzIzeU",
+        "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiWldabmFHbHFhMnh0Ym05d2NYSnpkSFYyZDNoNWVudDhmWDVfZ0lHQ2c0USIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODc2NSIsImNyb3NzT3JpZ2luIjpmYWxzZX0"
+      },
+      "author": "p256:0375100be869ed735410254c422cdb3ec0c0c78bf9910f61c92c6a571c5eb96f6f",
+      "sign_count": 1
+    },
+    {
+      "name": "helper_assertion_discoverable",
+      "kind": "assertion",
+      "valid": true,
+      "expect": {
+        "origin": "http://localhost:8765",
+        "rp_id": "localhost",
+        "require_user_verification": true,
+        "challenge": "l5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tbY"
+      },
+      "message": {
+        "author": "p256:0375100be869ed735410254c422cdb3ec0c0c78bf9910f61c92c6a571c5eb96f6f",
+        "authenticator_data": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAg",
+        "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoibDVpWm1wdWNuWjZmb0tHaW82U2xwcWVvcWFxcnJLMnVyN0N4c3JPMHRiWSIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODc2NSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+        "signature": "MEUCIDPkYpemsJDxqZ3ineq5x6oE7Yr6TykoM0lksuh7nUZEAiEAjc5usZuPtgPYhj-D90MyXrK46ZlNVbqSRlnLW-QzEK8"
+      },
+      "sign_count": 2
+    },
+    {
+      "name": "helper_assertion_by_id",
+      "kind": "assertion",
+      "valid": true,
+      "expect": {
+        "origin": "http://localhost:8765",
+        "rp_id": "localhost",
+        "require_user_verification": true,
+        "challenge": "ycrLzM3Oz9DR0tPU1dbX2Nna29zd3t_g4eLj5OXm5-g"
+      },
+      "message": {
+        "author": "p256:0375100be869ed735410254c422cdb3ec0c0c78bf9910f61c92c6a571c5eb96f6f",
+        "authenticator_data": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAw",
+        "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoieWNyTHpNM096OURSMHRQVTFkYlgyTm5hMjl6ZDN0X2c0ZUxqNU9YbTUtZyIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODc2NSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+        "signature": "MEUCIGVe-O16RW9xFwXy2CnoDnhRG1Sfd39Jdohbt_CBQgfSAiEAyOG4LUEfCdTvpvZY-aanwbccmoxzl92wy3jkWmxRPNg"
+      },
+      "sign_count": 3
+    },
+    {
       "name": "valid_user_verified",
       "kind": "assertion",
       "valid": true,
@@ -103,7 +158,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEQCIDkAdD839pnrocJlk9SuKDJP8kZKogVNAEL9YoXed2WhAiBJrGm2TSFyO2-NmEQZasn4-8mC4-bcTB40iecylUlbRw"
+        "signature": "MEUCIQCjJzEP9w1DB3rh3U3jgzVvQ5-EekZf4-j6wLRB_MaVEwIgTZGVmG1NJaVG2TkKyZBf-VjQ-ajvZJp29SjGx8xNf6A"
       },
       "sign_count": 7
     },
@@ -121,7 +176,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCIDVjC1F63Tojs53Gf4HoEkNs9Ghnyw6sa-lOzt8eLS4CAiEAlxd3gh-ljamKkz8pklmqcebpzsMa18JSOX7XuQgba74"
+        "signature": "MEYCIQDCviMld3LFDVdLSzaaDsDQmG7752YStrUNZTAUC0FGWQIhAM24abssFNy_gD5TscIvN-oK_sXFXS7nKrZ3a-V478mX"
       },
       "sign_count": 7,
       "note": "Authenticators do not normalise s; passkey signatures must accept both halves."
@@ -140,7 +195,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MBAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCIFpE4fGY3EhVOCOD11ggcM42dLMhDAEeU6KHv0EUp4FGAiEArsiL3oM-RSR61MggE_uzUESl6c4-TVmYQEaOvF6OKbU"
+        "signature": "MEUCIBvbX_zcy72kpN5vYZxGjUS_-kpE-FbQioqiIOGzjxwsAiEA63yXY15Ojd-1FAcj7e4BdJ16INo3FgyMFWlpr_TQ9_Q"
       }
     },
     {
@@ -157,7 +212,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MBAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCID7gXoRloVm9i0JKVDKPDGTlLiD9rGm-ieLu0DUi0wklAiEAu5NEb2k0ncZTD4-RLDo84v7BavFfYON4iVlNz31X1QA"
+        "signature": "MEUCIE0_wXELropFahryjveDW_MvxhzRmlCITz10Yo7PaAmuAiEAkwdkqaJIkQjgMnXan-P0HFtnj1Tx0THkM4h6M0-2FHk"
       },
       "sign_count": 7
     },
@@ -175,7 +230,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MEAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCIAWMiN2XLTil2d7gyGHKpyqIfkStdkLicnQNfodD6-kcAiEAo1JYMKkuqO00KEhP-j_K90MzRPkXAQldsBX8fRxT7t4"
+        "signature": "MEQCIDDZXn2b9iUwKfR98SF4naZariMuwTiMSL0NWcab9xCIAiAvHAM5GuE2cNDStj3zUMTLxPdJOLyG029NGHlLDDnBKg"
       }
     },
     {
@@ -192,7 +247,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEYCIQCz1YfJbIg0S5o2bu2cnvspYZSG1PRhVWTizHysGzzEdQIhAPc0wwu93j8ShHHqpbWegF3F1mMnj-tGdDI9NQU--wyQ"
+        "signature": "MEQCIHrc0Z-xuF6-8MxN37WT_fs_5YUiL5vSHB3JU301KVxqAiAY0FjQLztJt3YWflQ7gRW7z9C4RnD38GuHIQqM86ORzA"
       }
     },
     {
@@ -209,7 +264,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjp0cnVlfQ",
-        "signature": "MEQCIDUfXZN195K_RY-NdDPep3HlixfNjaO9MSZjQZPFTgtKAiB0GlHX3Jat6nmVPfGs_zDa7vVY2nlighb84iUotmkFZw"
+        "signature": "MEYCIQDpBlxkLWcsN7tP2eSGMpa78F_rWKeuLrnvOCyjT8GZBgIhAIhDUHhF4Hh90pWhMjFlzac8l-urnYpES2TJ67R_7B4r"
       }
     },
     {
@@ -226,7 +281,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "cnUvsAgYcrKLiw9Qs60lBBVYTIAeZ5kR5za4GQcSeUcFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCIQD_BLRfEXECTo9zcPq63DlPggTW42BlE2DlPe_DFVonGgIgDh2mY5NXmbuangIi-bNnoRaReeFPfHt1ObPgAuji1cw"
+        "signature": "MEUCIQC-8NeCMyXuZ2-6aUgqdleesf_aoU3Nerx6bdpG1xtSRQIgAT4F3gRY0z5KyC8FcNvMz6NohZA2B3DwgmjEKn4xItM"
       }
     },
     {
@@ -243,7 +298,7 @@
         "author": "p256:03209c317b637935dd3da1c54f63495dfb31f97d293df085710320595c9aacb83f",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABg",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEQCIGPndRy2TjfnMMxEqjwUFWq0jUC4wso_ZNjK3owqJQWRAiB5COL8gjbkX92poNmXVSi5O54rVjBRM1VBnocZ4DHUlg"
+        "signature": "MEYCIQDjzhHXNzKwTCRogulvaDG65gslm2l9Q-iqd9XGJP_uPgIhAPUYiJGuC0olZjpd5EqnDtnnF6TEEf3uLxxSXOiPACOz"
       }
     },
     {
@@ -257,10 +312,10 @@
         "require_user_verification": true
       },
       "message": {
-        "author": "p256:03dd6b2aafcad036aed356be0be3801fe92497ab7012481849d79dfe99bd11e247",
+        "author": "p256:0235670757ea8e5f9ea5c020acca42a1c754386b2509e8b43f8383977b07715c54",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEUCICj7eMgzI1i0bdvyOzpmR_nMW55N24_ddEqg8VA3rAUhAiEA3bkMrYJZF89PLr4lVl24UQPhYNRafuaf_gysQ6uTdks"
+        "signature": "MEYCIQD5RvwdcYypJXg6jI3uJ8ZhxSvfq8LJhw5btANep7ZKngIhAMAg1K8mhs_Fe14XbTn9k0NXG4nBQL91vzgGUS6zydl-"
       }
     },
     {
@@ -277,7 +332,7 @@
         "author": "ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
         "authenticator_data": "4Gx9lkMeSGrNwUU_2InwSUzPkRZ8rT83p1hKU6VTA9MFAAAABw",
         "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUUVGQ1EwUkZSa2RJU1VwTFRFMU9UMUJSVWxOVVZWWlhXRmxhVzF4ZFhsOCIsIm9yaWdpbiI6Imh0dHBzOi8vZGVzay5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
-        "signature": "MEYCIQD32ql_Rzuo0idjK8KGM03e1faATsHuJerNef6rxt-MFAIhAO1Bprk66urxogR2KzAhjLfE_dAwXcT97SBnLrE_CUSx"
+        "signature": "MEYCIQCJ7H5gANgsNCmq3jspt5OKUd1S_fyxqXNY2G01L9VSfgIhAJ6J4Ls7GJE1CC8orNpL8ruQ-1GWl0UZYT7dgcdyCjU-"
       },
       "note": "A valid Ed25519 key (from signed_message.json). Only P-256 passkeys for now."
     }
