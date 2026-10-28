@@ -5,6 +5,16 @@ const approveBtn = document.getElementById('approve-btn') as HTMLButtonElement;
 const denyBtn    = document.getElementById('deny-btn')   as HTMLButtonElement;
 const pwInput    = document.getElementById('ap-pw')      as HTMLInputElement;
 const errEl      = document.getElementById('ap-error')   as HTMLElement;
+const pwBlock    = document.getElementById('ap-pw-block') as HTMLElement;
+
+// Unlocked: approving is one click. Locked, or the session ran out meanwhile: ask for the password.
+let needPassword = true;
+
+function askForPassword() {
+  needPassword = true;
+  pwBlock.hidden = false;
+  pwInput.focus();
+}
 
 async function init() {
   if (!requestId) {
@@ -13,7 +23,7 @@ async function init() {
   }
 
   const req = await chrome.runtime.sendMessage({ type: 'GET_PENDING', requestId }) as
-    { challenge: string; origin: string } | null;
+    { challenge: string; origin: string; unlocked: boolean } | null;
 
   if (!req) {
     document.getElementById('loading')!.textContent = 'Request expired or already handled.';
@@ -24,12 +34,18 @@ async function init() {
   document.getElementById('req-challenge')!.textContent = req.challenge;
   document.getElementById('loading')!.hidden  = true;
   document.getElementById('content')!.hidden  = false;
-  pwInput.focus();
+  if (req.unlocked) {
+    needPassword = false;
+    pwBlock.hidden = true;
+    approveBtn.focus();
+  } else {
+    askForPassword();
+  }
 }
 
 approveBtn.addEventListener('click', async () => {
-  const pw = pwInput.value;
-  if (!pw) { errEl.textContent = 'Password required'; return; }
+  const pw = needPassword ? pwInput.value : undefined;
+  if (needPassword && !pw) { errEl.textContent = 'Password required'; return; }
 
   approveBtn.disabled = true;
   approveBtn.textContent = 'Signing…';
@@ -41,7 +57,12 @@ approveBtn.addEventListener('click', async () => {
     password: pw,
   }) as { error?: string } | null;
 
-  if (result?.error === 'WRONG_PASSWORD') {
+  if (result?.error === 'LOCKED') {
+    errEl.textContent = 'Keystone locked meanwhile. Enter your password.';
+    approveBtn.disabled = false;
+    approveBtn.textContent = 'Sign & Approve';
+    askForPassword();
+  } else if (result?.error === 'WRONG_PASSWORD') {
     errEl.textContent = 'Wrong password — try again.';
     approveBtn.disabled = false;
     approveBtn.textContent = 'Sign & Approve';
