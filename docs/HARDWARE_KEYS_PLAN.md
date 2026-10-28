@@ -85,7 +85,7 @@ So Keystone signs and verifies both.
 
 - [x] The algorithm travels inside the key, not beside it: `author` is bare hex for Ed25519
       (so every existing message still verifies) and `p256:<hex>` for P-256
-- [x] `SignedMessage::verify()` dispatches on the author's key type (`src/key.rs`)
+- [x] `SignedMessage::verify()` dispatches on the author's key type (`core/src/key.rs`)
 - [x] ~~`Identity` can hold a P-256 key~~ — not needed: P-256 keys live in phone chips and sign
       there, never in Rust. Reopen if a software P-256 key is ever wanted
 - [x] Public keys printed with their algorithm (`ed25519:…`, `p256:…`) so a key is never read as the wrong kind
@@ -102,7 +102,7 @@ Keystone should accept that key as an identity, so a service can start before th
 
 - [x] Passkey types. A passkey signs `authenticatorData || sha256(clientDataJSON)`, not
       Keystone's Blake3 hex, so `WebAuthnRegistration` and `WebAuthnAssertion` have their own
-      verifier (`src/webauthn.rs`). P-256 (ES256) only for now
+      verifier (`core/src/webauthn.rs`). P-256 (ES256) only for now
 - [x] Verification checks the challenge, the origin, the relying-party id, the user-present flag
       and, by default, the user-verified flag (fingerprint, face or PIN)
 - [x] The browser's public key (`getPublicKey()`, SPKI DER) converted to `p256:…`; no CBOR
@@ -110,7 +110,7 @@ Keystone should accept that key as an identity, so a service can start before th
 - [x] Vectors in `test-vectors/webauthn.json`: real output from Chrome's virtual authenticator,
       plus edge cases signed with OpenSSL
 - [x] A small JS helper a service drops into its page: register, then sign a challenge
-      (`js/keystone-passkey.js`; its real output from Chrome is in the vectors)
+      (`core/js/keystone-passkey.js`; its real output from Chrome is in the vectors)
 - [x] Note in the docs: synced passkeys (Google, Apple) are hardware-made but copied, encrypted,
       to the person's other devices; a FIDO card is the strictly device-bound option
 
@@ -122,7 +122,7 @@ does not change. The app's root key adopts the passkey as one of its devices (st
 Today a QR says `origin: "…"` and the phone believes it. A fake screen could ask for anything.
 
 - [x] A service has its own Keystone identity and signs every request: origin, purpose
-      (`link`, `check-in`, `sign`), nonce, expiry (`ServiceRequest`, `src/request.rs`). At most
+      (`link`, `check-in`, `sign`), nonce, expiry (`ServiceRequest`, `core/src/request.rs`). At most
       10 minutes, 60 s clock slack; names cannot carry control or text-direction characters
 - [x] The approval signs the request's hash, the service's key and the purpose, so it cannot be
       replayed for another request, another service or another purpose (`verify_approval`)

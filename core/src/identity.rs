@@ -295,7 +295,7 @@ mod tests {
     #[test]
     fn shared_test_vectors() {
         let file: serde_json::Value =
-            serde_json::from_str(include_str!("../test-vectors/signed_message.json")).unwrap();
+            serde_json::from_str(include_str!("../../test-vectors/signed_message.json")).unwrap();
         for case in file["cases"].as_array().unwrap() {
             let name = case["name"].as_str().unwrap();
             let msg: SignedMessage = serde_json::from_value(case["message"].clone()).unwrap();

@@ -1,0 +1,6 @@
+[toolchain]
+# CI and local builds both read this. Bump it on purpose, in its own PR: a new clippy can
+# fail the build on code that has not changed.
+channel = "1.99.1"
+components = ["clippy", "rustfmt"]
+profile = "minimal"

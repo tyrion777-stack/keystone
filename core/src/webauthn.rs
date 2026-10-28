@@ -259,7 +259,7 @@ mod tests {
 
     fn vectors() -> Vec<Value> {
         let file: Value =
-            serde_json::from_str(include_str!("../test-vectors/webauthn.json")).unwrap();
+            serde_json::from_str(include_str!("../../test-vectors/webauthn.json")).unwrap();
         file["cases"].as_array().unwrap().clone()
     }
 

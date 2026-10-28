@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Keystone</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      width: 320px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #111;
+      background: #fff;
+      margin: 0;
+    }
+    h1 { font-size: 16px; font-weight: 700; margin: 0 0 2px; }
+    .sub { color: #888; font-size: 12px; margin: 0 0 20px; }
+    label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; }
+    input[type="password"], input[type="text"] {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; margin-bottom: 10px; outline: none;
+    }
+    input:focus { border-color: #111; }
+    .btn {
+      display: block; width: 100%; padding: 9px;
+      background: #111; color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .btn:hover { background: #333; }
+    .btn-ghost {
+      background: transparent; color: #555;
+      border: 1px solid #d1d5db;
+    }
+    .btn-ghost:hover { background: #f9f9f9; color: #111; }
+    .error { color: #dc2626; font-size: 12px; margin-top: 4px; min-height: 18px; }
+    .pubkey {
+      font-family: monospace; font-size: 10px;
+      background: #f4f4f5; padding: 8px 10px;
+      border-radius: 6px; word-break: break-all;
+      margin: 4px 0 16px; user-select: all;
+    }
+    .key-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .backup-box {
+      background: #fefce8; border: 1px solid #fde047;
+      border-radius: 6px; padding: 12px; margin: 0 0 14px;
+    }
+    .backup-box strong { display: block; margin-bottom: 4px; }
+    .backup-box small { color: #555; font-size: 11px; display: block; margin-bottom: 8px; }
+    .backup-key {
+      font-family: monospace; font-size: 10px;
+      word-break: break-all; user-select: all;
+      background: #fff; border-radius: 4px; padding: 6px;
+      border: 1px solid #fde047;
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>Keystone</h1>
+  <p class="sub">Your cryptographic identity for the web</p>
+
+  <!-- View: first-time setup -->
+  <div id="v-setup">
+    <label for="s-privkey">Existing private key hex (leave blank to generate new)</label>
+    <input id="s-privkey" type="password" placeholder="64-char hex — optional">
+    <label for="s-pw">Password</label>
+    <input id="s-pw" type="password" placeholder="Protect your key">
+    <label for="s-pw2">Confirm password</label>
+    <input id="s-pw2" type="password" placeholder="Repeat password">
+    <button class="btn" id="s-submit">Set Up Keystone</button>
+    <div class="error" id="s-error"></div>
+  </div>
+
+  <!-- View: backup prompt (new key only) -->
+  <div id="v-backup" hidden>
+    <div class="backup-box">
+      <strong>Save your private key</strong>
+      <small>This is the only way to restore your identity on another device or in the CLI. Store it somewhere safe.</small>
+      <div class="backup-key" id="backup-key"></div>
+    </div>
+    <button class="btn" id="backup-done">I've saved it — continue</button>
+  </div>
+
+  <!-- View: locked (has key, session expired) -->
+  <div id="v-locked" hidden>
+    <label for="l-pw">Password</label>
+    <input id="l-pw" type="password" placeholder="Unlock your identity" autofocus>
+    <button class="btn" id="l-submit">Unlock</button>
+    <div class="error" id="l-error"></div>
+  </div>
+
+  <!-- View: unlocked -->
+  <div id="v-main" hidden>
+    <div class="key-label">Your public key</div>
+    <div class="pubkey" id="m-pubkey" title="Click to copy"></div>
+    <button class="btn btn-ghost" id="m-lock">Lock</button>
+  </div>
+
+  <script type="module" src="./src/popup.ts"></script>
+</body>
+</html>

@@ -1,29 +1,3 @@
-[package]
-name = "keystone-core"
-version = "0.1.2"
-edition = "2024"
-description = "Portable identity, signed social graph, and P2P transport primitives for the Keystone protocol"
-license = "MIT"
-repository = "https://github.com/tyrion777-stack/keystone-core"
-keywords = ["p2p", "identity", "ed25519", "libp2p", "decentralized"]
-categories = ["network-programming", "cryptography", "authentication"]
-
-[dependencies]
-ed25519-dalek = { version = "2.1", features = ["rand_core"] }
-blake3 = "1.5"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-rand = "0.8"
-hex = "0.4"
-thiserror = "1.0"
-libp2p = { version = "0.53", features = ["tcp", "noise", "yamux", "quic", "relay", "dcutr", "identify", "ping", "kad", "mdns", "request-response", "json", "cbor", "tokio", "macros"] }
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
-argon2 = "0.5"
-aes-gcm = "0.10"
-x25519-dalek = { version = "2.0", features = ["static_secrets"] }
-hkdf = "0.12"
-sha2 = "0.10"
-rpassword = "7.0"
-p256 = { version = "0.13", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
-base64 = "0.22"
+[workspace]
+members = ["core", "relay"]
+resolver = "3"

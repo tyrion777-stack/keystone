@@ -34,7 +34,7 @@ content is self-verifying: it doesn't matter who hands it to you, the math prove
 
 ## What's Next
 
-### Real-World Integration ✓ DONE — DeltaType
+### Real-World Integration ✓ DONE
 - [x] Add `keystone-core` as dependency in a production app
 - [x] DB migration: `keystone_public_key` column on users table
 - [x] Challenge/response auth endpoints (alternative to existing login)
@@ -42,16 +42,16 @@ content is self-verifying: it doesn't matter who hands it to you, the math prove
 - [ ] App keypair encrypted at rest with Argon2id + AES-256-GCM
 
 First external app running Keystone auth in production.
-The quiz app (elrquiz) follows the same pattern.
+A second app, a quiz with signed score credentials, follows the same pattern.
 
 ### Week 4 — Content Layer
 - [ ] `ContentStore` — store and retrieve blobs by Blake3 hash
 - [ ] Publish content to the DHT (hash → peer address mapping)
 - [ ] Query content by hash — retrieve from any peer holding it
-- [ ] Latency benchmark vs plain HTTP on Server 2
+- [ ] Latency benchmark vs plain HTTP on a real server
 
 ### Bootstrap Node (internet-wide discovery)
-- [ ] Deploy a persistent Keystone node on Server 2
+- [ ] Deploy a persistent Keystone node on a public server
 - [ ] Peers provide bootstrap addresses at startup to seed DHT
 - [ ] mDNS stays for LAN; bootstrap handles WAN
 - [ ] Opens firewall port for Keystone (TCP, later UDP for QUIC)
@@ -65,7 +65,7 @@ The quiz app (elrquiz) follows the same pattern.
 ### Transport Upgrade — QUIC
 - [ ] Replace TCP with QUIC (quinn) for faster handshakes
 - [ ] Better performance on mobile and unreliable connections
-- [ ] UDP firewall rule needed on Server 1
+- [ ] UDP firewall rule needed on the bootstrap server
 
 ### Identity Hardening
 - [ ] Private key encryption at rest — Argon2id + AES-256-GCM

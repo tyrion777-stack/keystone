@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keystone Sign-in Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #0d0d1f; color: #fff;
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 24px; padding: 32px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+    .sub { font-size: 13px; color: #8888aa; letter-spacing: 1px; }
+    #qr-box {
+      width: 260px; height: 260px;
+      background: #fff; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    #qr-box canvas, #qr-box img { display: block; }
+    #status {
+      font-size: 14px; color: #8888aa;
+      text-align: center; max-width: 360px; line-height: 1.6;
+    }
+    #result {
+      display: none;
+      background: #181835; border: 1px solid #2a2a50; border-radius: 12px;
+      padding: 24px; max-width: 480px; width: 100%; gap: 12px;
+      flex-direction: column;
+    }
+    #result.show { display: flex; }
+    .label { font-size: 10px; color: #8888aa; letter-spacing: 2px; text-transform: uppercase; }
+    .value { font-family: monospace; font-size: 11px; color: #a0f0c0; word-break: break-all; line-height: 1.6; }
+    .success { font-size: 18px; font-weight: 700; color: #a0f0c0; }
+    button {
+      background: #5c6bc0; color: #fff; border: none; border-radius: 8px;
+      padding: 14px 28px; font-size: 14px; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
+    }
+    button:hover { background: #6979d0; }
+    .spinner {
+      width: 20px; height: 20px; border: 2px solid #2a2a50;
+      border-top-color: #5c6bc0; border-radius: 50%;
+      animation: spin 0.8s linear infinite; display: inline-block;
+      vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <h1>Keystone</h1>
+  <p class="sub">Scan to sign in</p>
+
+  <div id="qr-box">
+    <div id="qr"></div>
+  </div>
+
+  <p id="status"><span class="spinner"></span>Waiting for phone to scan…</p>
+
+  <div id="result">
+    <p class="success">Signed in</p>
+    <p class="label">Public key</p>
+    <p class="value" id="res-pubkey"></p>
+    <p class="label">Signature</p>
+    <p class="value" id="res-sig"></p>
+    <button onclick="reset()">Sign in again</button>
+  </div>
+
+  <script>
+    const RELAY_WS = `ws://${location.host}/ws`;
+
+    let ws = null;
+
+    function uuid() {
+      return crypto.randomUUID();
+    }
+
+    function randomChallenge() {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function start() {
+      const requestId = uuid();
+      const challenge = randomChallenge();
+      const origin    = location.host || 'keystone-relay-demo';
+
+      const payload = JSON.stringify({
+        type:      'ks_sign',
+        challenge,
+        origin,
+        relay:     `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`,
+        requestId,
+      });
+
+      // Render QR
+      document.getElementById('qr').innerHTML = '';
+      new QRCode(document.getElementById('qr'), {
+        text: payload,
+        width: 228,
+        height: 228,
+        colorDark: '#000',
+        colorLight: '#fff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+
+      document.getElementById('status').innerHTML =
+        '<span class="spinner"></span>Waiting for phone to scan…';
+      document.getElementById('result').classList.remove('show');
+
+      // Connect WebSocket and wait for signature
+      ws = new WebSocket(`${RELAY_WS}/${requestId}`);
+
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        document.getElementById('res-pubkey').textContent = data.pubkey ?? '—';
+        document.getElementById('res-sig').textContent    = data.signature ?? '—';
+        document.getElementById('status').style.display   = 'none';
+        document.getElementById('result').classList.add('show');
+        ws.close();
+      };
+
+      ws.onerror = () => {
+        document.getElementById('status').textContent = 'Relay connection failed.';
+      };
+    }
+
+    function reset() {
+      if (ws) ws.close();
+      document.getElementById('result').classList.remove('show');
+      document.getElementById('status').style.display = '';
+      start();
+    }
+
+    start();
+  </script>
+</body>
+</html>
