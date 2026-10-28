@@ -1,6 +1,21 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { blake3 } from '@noble/hashes/blake3';
+import { argon2id } from '@noble/hashes/argon2';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+
+// Argon2id: 64 MiB, 3 passes. Stronger than keystone-core, which uses the argon2 crate's
+// defaults (19 MiB, 2 passes); the two blob formats are not interchangeable either way.
+const ARGON2_PARAMS = { m: 65536, t: 3, p: 1, dkLen: 32 };
+
+// Blob formats (decoded):
+//   v1 (PBKDF2 legacy): salt(16) || nonce(12) || ciphertext(48) = 76 bytes, no marker
+//   v2 (Argon2id):      0x02 || salt(16) || nonce(12) || ciphertext(48) = 77 bytes
+const V1_LEN = 76;
+const V2_MARKER = 0x02;
+
+export function needsMigration(b64: string): boolean {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).length === V1_LEN;
+}
 
 // --- Key generation & derivation ---
 
@@ -32,52 +47,64 @@ export function signChallenge(seed: Uint8Array, challenge: string): string {
 }
 
 // --- Encrypted key storage ---
-// Format: base64( salt(16) || nonce(12) || AES-256-GCM ciphertext )
-// KDF: PBKDF2-SHA256, 300k iterations
-// Compatible only with extension storage — not the Argon2id .keystone file format.
-// Import from .keystone file (Argon2id) is Layer 3.
 
 export async function encryptSeed(seed: Uint8Array, password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const nonce = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(password, salt);
+  const rawKey = argon2id(new TextEncoder().encode(password), salt, ARGON2_PARAMS);
+  const aesKey = await crypto.subtle.importKey('raw', new Uint8Array(rawKey), 'AES-GCM', false, ['encrypt']);
   const ct = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, new Uint8Array(seed))
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aesKey, new Uint8Array(seed))
   );
-  const blob = new Uint8Array(28 + ct.length);
-  blob.set(salt, 0);
-  blob.set(nonce, 16);
-  blob.set(ct, 28);
+  // v2 blob: 0x02 marker || salt(16) || nonce(12) || ciphertext
+  const blob = new Uint8Array(1 + 16 + 12 + ct.length);
+  blob[0] = V2_MARKER;
+  blob.set(salt, 1);
+  blob.set(nonce, 17);
+  blob.set(ct, 29);
   return btoa(String.fromCharCode(...blob));
 }
 
 export async function decryptSeed(b64: string, password: string): Promise<Uint8Array> {
   const blob = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const salt = blob.slice(0, 16);
-  const nonce = blob.slice(16, 28);
-  const ct = blob.slice(28);
-  const key = await deriveKey(password, salt);
+
+  if (blob.length === V1_LEN) {
+    return decryptV1Pbkdf2(blob, password);
+  }
+
+  if (blob[0] !== V2_MARKER) throw new Error('Unknown key format');
+  const salt = blob.slice(1, 17);
+  const nonce = blob.slice(17, 29);
+  const ct = blob.slice(29);
+  const rawKey = argon2id(new TextEncoder().encode(password), salt, ARGON2_PARAMS);
+  const aesKey = await crypto.subtle.importKey('raw', new Uint8Array(rawKey), 'AES-GCM', false, ['decrypt']);
   try {
-    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, ct);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, aesKey, ct);
     return new Uint8Array(pt);
   } catch {
     throw new Error('Wrong password or corrupted key');
   }
 }
 
-async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+// One-time migration path: decrypt legacy PBKDF2-SHA256 blobs
+async function decryptV1Pbkdf2(blob: Uint8Array, password: string): Promise<Uint8Array> {
+  const salt = blob.slice(0, 16);
+  const nonce = blob.slice(16, 28);
+  const ct = blob.slice(28);
   const base = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveKey'],
+    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey'],
   );
-  return crypto.subtle.deriveKey(
+  const aesKey = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: 300_000, hash: 'SHA-256' },
     base,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt', 'decrypt'],
+    ['decrypt'],
   );
+  try {
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, aesKey, ct);
+    return new Uint8Array(pt);
+  } catch {
+    throw new Error('Wrong password or corrupted key');
+  }
 }

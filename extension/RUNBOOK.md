@@ -140,7 +140,7 @@ src/approval.ts     The window that appears when a site requests signing.
 
 - The private key never leaves `background.ts`. `inject.ts` and `content.ts`
   only see messages, never key material.
-- At rest: key is PBKDF2-SHA256 (300k iterations) + AES-256-GCM encrypted
+- At rest: key is Argon2id (m=64 MB, t=3 passes) + AES-256-GCM encrypted
   in `chrome.storage.local`.
 - In session: decrypted seed lives in `chrome.storage.session` for 30
   minutes after unlock, then requires password again.

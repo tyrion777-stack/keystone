@@ -1,10 +1,10 @@
-// A module, as Vite bundles it: without this, tsc reads every page script as one global scope.
-export {};
+import QRCode from 'qrcode';
+import { parsePhoneReply } from './pairing';
 
-type View = 'setup' | 'backup' | 'locked' | 'main';
+type View = 'setup' | 'backup' | 'locked' | 'main' | 'device';
 
 function show(view: View) {
-  for (const v of ['setup', 'backup', 'locked', 'main'] as const) {
+  for (const v of ['setup', 'backup', 'locked', 'main', 'device'] as const) {
     (document.getElementById(`v-${v}`) as HTMLElement).hidden = v !== view;
   }
 }
@@ -99,6 +99,112 @@ el('m-lock').addEventListener('click', async () => {
 el('m-pubkey').addEventListener('click', () => {
   const text = el('m-pubkey').textContent ?? '';
   navigator.clipboard.writeText(text).catch(() => {/* non-fatal */});
+});
+
+// --- Add Device ---
+
+let deviceWs: WebSocket | null = null;
+
+// The site in the active tab, read when the popup opens (activeTab lets us see it then). It is
+// read ahead so the click below can ask for access straight away: Chrome only shows the
+// permission prompt while the click is still being handled.
+let tabOrigin: string | null = null;
+chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+  try {
+    if (tab?.url) tabOrigin = new URL(tab.url).origin;
+  } catch {
+    tabOrigin = null;
+  }
+});
+
+el('m-add-device').addEventListener('click', async () => {
+  const origin = tabOrigin;
+  if (!origin) return;
+
+  // Access to this one site, asked for now, not every site at install.
+  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] }).catch(() => false);
+
+  // Reset device view
+  el('d-site').textContent = origin;
+  el('d-status').textContent = 'Connecting…';
+  el<HTMLImageElement>('d-qr').hidden = true;
+  el('d-error').textContent = '';
+  el<HTMLElement>('d-success').hidden = true;
+  deviceWs?.close();
+  show('device');
+
+  if (!granted) {
+    el('d-error').textContent = 'Keystone needs access to this site to add a device';
+    el('d-status').textContent = '';
+    return;
+  }
+
+  const result = await send({ type: 'ADD_DEVICE_INIT', origin }) as Record<string, unknown>;
+  if (!result['ok']) {
+    el('d-error').textContent = result['error'] as string;
+    el('d-status').textContent = '';
+    return;
+  }
+
+  const { pairingId, deviceChallenge, relay } = result as {
+    pairingId: string;
+    deviceChallenge: string;
+    relay: string;
+  };
+
+  // Render QR
+  const payload = JSON.stringify({
+    type: 'ks_add_device',
+    pairingId,
+    challenge: deviceChallenge,
+    relay,
+    origin,
+  });
+
+  const dataUrl = await QRCode.toDataURL(payload, { width: 240, margin: 1, color: { dark: '#000', light: '#fff' } });
+  const qrImg = el<HTMLImageElement>('d-qr');
+  qrImg.src = dataUrl;
+  qrImg.hidden = false;
+  el('d-status').textContent = 'Scan with Keystone on your phone';
+
+  // Wait for phone to send its pubkey via relay
+  const ws = new WebSocket(`${relay}/${pairingId}`);
+  deviceWs = ws;
+
+  ws.onmessage = async (e) => {
+    ws.close();
+    qrImg.hidden = true;
+    el('d-status').textContent = 'Verifying…';
+
+    const reply = parsePhoneReply(e.data);
+    if (!reply) {
+      el('d-status').textContent = '';
+      el('d-error').textContent = 'The phone sent a reply Keystone cannot read';
+      return;
+    }
+    const { pubkey, signature } = reply;
+    const confirm = await send({ type: 'ADD_DEVICE_CONFIRM', origin, pairingId, pubkey, signature }) as Record<string, unknown>;
+
+    if (confirm['ok']) {
+      el('d-status').textContent = '';
+      el<HTMLElement>('d-success').hidden = false;
+      el('d-success').textContent = 'Device added — your phone can now sign in.';
+    } else {
+      el('d-status').textContent = '';
+      el('d-error').textContent = confirm['error'] as string || 'Failed to register device';
+    }
+  };
+
+  ws.onerror = () => {
+    el('d-error').textContent = 'Relay connection failed';
+    el('d-status').textContent = '';
+  };
+});
+
+el('d-back').addEventListener('click', () => {
+  deviceWs?.close();
+  deviceWs = null;
+  show('main');
 });
 
 init();
