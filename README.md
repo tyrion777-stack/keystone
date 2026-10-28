@@ -15,6 +15,7 @@ Everything is open source under the MIT licence.
 |---|---|
 | [`core/`](core/) | The Rust library (`keystone-core` on crates.io): keys, signing and verification, passkeys (WebAuthn), signed service requests, P2P transport |
 | [`core/js/`](core/js/) | `keystone-passkey.js`, a dependency-free helper a service drops into its page |
+| [`wasm/`](wasm/) | core's checks compiled to WebAssembly, so the app and the extension verify with the same Rust that services run |
 | [`relay/`](relay/) | The relay server that carries messages between a service's screen and a phone |
 | [`extension/`](extension/) | The browser extension: a Keystone identity on every page |
 | [`app/`](app/) | The phone app (SvelteKit + Capacitor, Android) |

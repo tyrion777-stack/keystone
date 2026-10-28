@@ -20,3 +20,6 @@ local.properties
 *.keystore
 .env
 .env.*
+
+# Built by wasm/build.mjs
+/wasm/js/*.generated.ts
