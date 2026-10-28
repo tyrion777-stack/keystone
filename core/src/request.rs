@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn shared_test_vectors() {
         let file: Value =
-            serde_json::from_str(include_str!("../test-vectors/service_request.json")).unwrap();
+            serde_json::from_str(include_str!("../../test-vectors/service_request.json")).unwrap();
         for case in file["cases"].as_array().unwrap() {
             let name = case["name"].as_str().unwrap();
             let now = case["now"].as_u64().unwrap();

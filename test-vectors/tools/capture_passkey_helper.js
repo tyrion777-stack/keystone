@@ -7,7 +7,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
-const helper = fs.readFileSync(path.join(__dirname, '../../js/keystone-passkey.js'));
+const helper = fs.readFileSync(path.join(__dirname, '../../core/js/keystone-passkey.js'));
 const server = http.createServer((req, res) => {
   if (req.url === '/keystone-passkey.js') {
     res.setHeader('content-type', 'text/javascript');
