@@ -67,6 +67,11 @@ impl Identity {
         hex::encode(self.signing_key.verifying_key().to_bytes())
     }
 
+    /// The public key with its algorithm, for display (`ed25519:…`) or comparison.
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey::Ed25519(self.signing_key.verifying_key())
+    }
+
     /// Export the private key as hex for secure backup.
     /// Treat this like a password — whoever has it controls the identity.
     pub fn private_key_hex(&self) -> String {

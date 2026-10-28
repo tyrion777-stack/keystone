@@ -93,12 +93,18 @@ does not change.
 
 Today a QR says `origin: "…"` and the phone believes it. A fake screen could ask for anything.
 
-- [ ] A service has its own Keystone identity and signs every request: origin, purpose
-      (`link`, `check-in`, `sign`), nonce, expiry
-- [ ] The app and extension verify it and show the service's name as verified, or refuse
+- [x] A service has its own Keystone identity and signs every request: origin, purpose
+      (`link`, `check-in`, `sign`), nonce, expiry (`ServiceRequest`, `src/request.rs`). At most
+      10 minutes, 60 s clock slack; names cannot carry control or text-direction characters
+- [x] The approval signs the request's hash, the service's key and the purpose, so it cannot be
+      replayed for another request, another service or another purpose (`verify_approval`)
+- [x] A passkey can approve a request: its challenge is the request hash (`passkey_challenge`)
+- [x] Vectors in `test-vectors/service_request.json`, signed in Python independently of Rust
+- [ ] The app and extension verify it and show the service's name as verified, or refuse (JS;
+      needs the extension's uncommitted work settled and the app in git first)
 - [ ] Pin on first link: after the first approval the phone remembers that service's key, and a
-      later request from a different key for the same name is a warning
-- [ ] The approval signs the whole request, so it cannot be replayed for another purpose
+      later request from a different key for the same name is a warning (app and extension)
+- [ ] Services remember used nonces and accept each once (each service's own code; documented)
 
 ## Stage 4 — Relay
 
