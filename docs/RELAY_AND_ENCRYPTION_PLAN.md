@@ -16,7 +16,7 @@ Peers behind NAT (home routers, mobile) can't accept inbound connections. Withou
 Joe (NAT) connects to the bootstrap relay server and reserves a slot.
 Joe advertises a relay address in the DHT:
 ```
-/ip4/124.43.78.112/tcp/9000/p2p/<bootstrap-peer-id>/p2p-circuit/p2p/<joe-peer-id>
+/ip4/<bootstrap-ip>/tcp/9000/p2p/<bootstrap-peer-id>/p2p-circuit/p2p/<joe-peer-id>
 ```
 Sarah dials that address. Traffic flows Sarah ↔ relay ↔ Joe. Neither peer's real IP is exposed.
 
@@ -55,7 +55,7 @@ Relay server handles reservation requests from NAT'd peers automatically.
 
 ### Deployment
 
-Bootstrap node (`124.43.78.112:9000`) must be redeployed after bootstrap.rs changes.
+The bootstrap node must be redeployed after bootstrap.rs changes.
 No new infrastructure — bootstrap doubles as relay.
 
 ### Subtasks

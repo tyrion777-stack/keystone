@@ -342,6 +342,15 @@ Replicate `save_encrypted` / `load_encrypted` using the browser's WebCrypto API:
 - Keys are device-bound — one keypair per device
 - Enrol new devices via a one-time link from an already-authenticated session
 
+### Running a node
+
+`cargo run --bin node -- [key file] [--bootstrap <multiaddr>]`
+
+The node finds peers on the local network (mDNS) by itself. To reach peers beyond it, give it
+a bootstrap node with `--bootstrap` or the `KEYSTONE_BOOTSTRAP` environment variable: an
+`/ip4/.../tcp/<port>/p2p/<peer id>` multiaddr. The bootstrap node doubles as a circuit relay
+for nodes behind NAT. No address is compiled in. The key file defaults to `keystone.key`.
+
 ---
 
 ## What keystone-core Does Not Do (Yet)

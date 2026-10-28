@@ -22,7 +22,7 @@
 - [x] mDNS — zero-config local peer discovery
 - [x] Kademlia DHT — distributed peer routing
 - [x] Follow records travel peer-to-peer and verify on receipt
-- [x] Bootstrap node live on Server 1 (124.43.78.112:9000)
+- [x] Bootstrap node live (address passed with `--bootstrap`, not compiled in)
 - [x] Internet-wide peer discovery working
 - [x] Published on crates.io (v0.1.2) and GitHub
 
@@ -160,7 +160,7 @@ Build: `cd extension && npm run build` → load `dist/` unpacked in Chrome.
 
 | Thing | Status |
 |---|---|
-| Bootstrap node | Live — 124.43.78.112:9000 |
+| Bootstrap node | Live (address in config, not in the code) |
 | Peer ID | 12D3KooWCruYnFTDrFoNPtHpaGPcWm4NvfzjyS7uVqWCBimievS2 |
 | crates.io | keystone-core v0.1.2 |
 | GitHub | github.com/tyrion777-stack/keystone-core |
