@@ -3,10 +3,10 @@ name: Extension
 on:
   push:
     branches: [master]
-    paths: ["extension/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
   pull_request:
     branches: [master]
-    paths: ["extension/**", ".github/workflows/extension.yml"]
+    paths: ["extension/**", "test-vectors/**", ".github/workflows/extension.yml"]
 
 jobs:
   build:
@@ -26,4 +26,5 @@ jobs:
 
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build

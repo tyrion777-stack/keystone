@@ -17,7 +17,6 @@ window.addEventListener('message', async (event) => {
       const r = await chrome.runtime.sendMessage({
         type: 'SIGN_REQUEST',
         challenge: msg['challenge'],
-        origin: window.location.origin,
       });
       window.postMessage({ __ks_resp: id, ...(r as object) }, '*');
     }
