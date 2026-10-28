@@ -3,6 +3,8 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+	// keystone-core's checks are imported from ../wasm (built by `npm run wasm`).
+	server: { fs: { allow: ['../wasm'] } },
 	plugins: [
 		sveltekit({
 			compilerOptions: {

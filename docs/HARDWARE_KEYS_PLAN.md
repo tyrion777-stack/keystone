@@ -128,10 +128,13 @@ Today a QR says `origin: "…"` and the phone believes it. A fake screen could a
       replayed for another request, another service or another purpose (`verify_approval`)
 - [x] A passkey can approve a request: its challenge is the request hash (`passkey_challenge`)
 - [x] Vectors in `test-vectors/service_request.json`, signed in Python independently of Rust
-- [ ] The app and extension verify it and show the service's name as verified, or refuse (JS;
-      needs the extension's uncommitted work settled and the app in git first)
-- [ ] Pin on first link: after the first approval the phone remembers that service's key, and a
-      later request from a different key for the same name is a warning (app and extension)
+- [x] The app and extension verify it and show the service's name as verified, or refuse. They
+      run core's own checks, compiled to WebAssembly (`wasm/`); the extension also refuses a
+      request for any origin but the page's own
+- [x] Pin on first use: the first approved request pins the service key for its origin; a later
+      request from a different key is blocked, with nothing to approve (app and extension)
+- [x] Sign-in from a browser names the site (`core/src/sign_in.rs`, extension `signIn`), so a
+      signature made on one site is useless at another
 - [ ] Services remember used nonces and accept each once (each service's own code; documented)
 
 ## Stage 4 — Relay

@@ -4,12 +4,18 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"wasm": "node ../wasm/build.mjs",
+		"predev": "npm run wasm",
 		"dev": "vite dev",
+		"prebuild": "npm run wasm",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"precheck": "npm run wasm",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"pretest": "npm run wasm",
+		"test": "vitest run"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
@@ -18,7 +24,8 @@
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.16"
+		"vite": "^8.0.16",
+		"vitest": "^4.1.12"
 	},
 	"dependencies": {
 		"@capacitor/android": "^8.4.1",

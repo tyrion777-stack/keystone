@@ -3,6 +3,7 @@ import { blake3 } from '@noble/hashes/blake3.js';
 import { argon2id } from '@noble/hashes/argon2.js';
 import { gcm } from '@noble/ciphers/aes.js';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
+import type { SignedMessage } from '../../../wasm/js/keystone-core';
 
 // 32 MB on mobile — lighter than extension (64 MB) for lower-end devices
 const ARGON2_PARAMS = { m: 32768, t: 3, p: 1, dkLen: 32 };
@@ -29,6 +30,17 @@ export function seedFromHex(hex: string): Uint8Array {
 export function signChallenge(seed: Uint8Array, challenge: string): string {
 	const hashHex = bytesToHex(blake3(new TextEncoder().encode(challenge)));
 	return bytesToHex(ed25519.sign(new TextEncoder().encode(hashHex), seed));
+}
+
+// A SignedMessage, as keystone-core reads it: the content, its Blake3 hex, and the signature
+// over that hex.
+export function signMessage(seed: Uint8Array, content: string): SignedMessage {
+	return {
+		author: getPublicKeyHex(seed),
+		content,
+		content_hash: bytesToHex(blake3(new TextEncoder().encode(content))),
+		signature: signChallenge(seed, content)
+	};
 }
 
 export function encryptSeed(seed: Uint8Array, password: string): string {
