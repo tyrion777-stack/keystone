@@ -146,6 +146,38 @@ let token = create_jwt(&user);
 Ok(Json(json!({ "token": token })))
 ```
 
+### Passkeys (no app needed)
+
+Every phone browser can make a key in its own chip and unlock it with a fingerprint.
+Keystone verifies those keys too. Your page calls `navigator.credentials.create()` once
+to link, then `navigator.credentials.get()` to sign in, and sends the browser's output
+(base64url) to your server:
+
+```rust
+use keystone_core::{WebAuthnAssertion, WebAuthnExpectations, WebAuthnRegistration};
+
+let expected = WebAuthnExpectations {
+    challenge: &challenge_bytes,          // 16+ random bytes, single use
+    origin: "https://desk.example.com",   // your page's exact origin
+    rp_id: "example.com",                 // the passkey's relying-party id
+    require_user_verification: true,      // fingerprint, face or PIN
+};
+
+// Link, once: store linked.author.to_wire() ("p256:…") against your record.
+let linked = registration.verify(&expected)?;
+
+// Sign in: assertion.author is the stored key.
+let passkey = assertion.verify(&expected)?;
+```
+
+`verify` checks the signature, challenge, origin, relying party and flags, and returns the
+authenticator's `sign_count`. If a non-zero count fails to increase, the passkey may have been
+copied; what to do then is your call.
+
+Synced passkeys (Google Password Manager, iCloud Keychain) are made in hardware but copied,
+encrypted, to the person's other devices. A FIDO security key or card is the strictly
+device-bound option.
+
 ---
 
 ## Signed Credentials

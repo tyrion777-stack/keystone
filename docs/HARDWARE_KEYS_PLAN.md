@@ -58,24 +58,31 @@ So Keystone signs and verifies both.
 - [x] The algorithm travels inside the key, not beside it: `author` is bare hex for Ed25519
       (so every existing message still verifies) and `p256:<hex>` for P-256
 - [x] `SignedMessage::verify()` dispatches on the author's key type (`src/key.rs`)
-- [ ] `Identity` can hold a P-256 key, with a versioned encrypted key file (1b)
+- [x] ~~`Identity` can hold a P-256 key~~ — not needed: P-256 keys live in phone chips and sign
+      there, never in Rust. Reopen if a software P-256 key is ever wanted
 - [x] Public keys printed with their algorithm (`ed25519:…`, `p256:…`) so a key is never read as the wrong kind
 - [x] Test vectors for both in Rust (`test-vectors/signed_message.json`), including the Blake3-hex
       signing rule, cross-checked against OpenSSL
-- [ ] The same vectors run in JavaScript (1c)
-- [ ] Verifiers (the extension, the sidecar pattern in the README) accept both
+- [x] ~~The same vectors run in JavaScript~~ — not needed yet: no JavaScript code verifies
+      signatures; the app and extension only sign. Run the vectors when a JS verifier is written
+- [x] Verifiers accept both: the sidecar pattern uses `SignedMessage::verify()`
 
 ## Stage 2 — Passkeys without the app
 
 Every phone browser can already make a key in its own chip and unlock it with a fingerprint.
 Keystone should accept that key as an identity, so a service can start before the app ships.
 
-- [ ] A `webauthn` message type. A passkey signs `authenticatorData || sha256(clientDataJSON)`,
-      not Keystone's Blake3 hex, so it is its own type with its own verifier
-- [ ] Verification checks the challenge, the origin, the relying-party id and the user-presence flag
-- [ ] COSE public keys converted to Keystone's printed form (`p256:…`)
-- [ ] A small JS helper a service drops into its page: register, then sign a challenge
-- [ ] Note in the docs: synced passkeys (Google, Apple) are hardware-made but copied, encrypted,
+- [x] Passkey types. A passkey signs `authenticatorData || sha256(clientDataJSON)`, not
+      Keystone's Blake3 hex, so `WebAuthnRegistration` and `WebAuthnAssertion` have their own
+      verifier (`src/webauthn.rs`). P-256 (ES256) only for now
+- [x] Verification checks the challenge, the origin, the relying-party id, the user-present flag
+      and, by default, the user-verified flag (fingerprint, face or PIN)
+- [x] The browser's public key (`getPublicKey()`, SPKI DER) converted to `p256:…`; no CBOR
+      parsing, and no attestation, since the service links a person standing in front of it
+- [x] Vectors in `test-vectors/webauthn.json`: real output from Chrome's virtual authenticator,
+      plus edge cases signed with OpenSSL
+- [ ] A small JS helper a service drops into its page: register, then sign a challenge (2b)
+- [x] Note in the docs: synced passkeys (Google, Apple) are hardware-made but copied, encrypted,
       to the person's other devices; a FIDO card is the strictly device-bound option
 
 When the app arrives it offers the same flow with a key it holds itself, and the service's code
