@@ -222,6 +222,10 @@ let passkey = assertion.verify(&expected)?;
 authenticator's `sign_count`. If a non-zero count fails to increase, the passkey may have been
 copied; what to do then is your call.
 
+On a shared computer, such as a front desk, pass `onPhone: true` to `linkPasskey` and
+`signInWithPasskey`: the browser shows a QR for the person's phone, never keeps the passkey on
+the desk computer, and waits 3 minutes instead of 1.
+
 To tie a passkey approval to a signed request (below), use the request's
 `passkey_challenge()` as the challenge.
 

@@ -20,6 +20,10 @@
 
 const ES256 = -7;
 
+// A person scanning a QR with their phone needs longer than one tapping their own device.
+const TIMEOUT_MS = 60_000;
+const ON_PHONE_TIMEOUT_MS = 180_000;
+
 export class PasskeyError extends Error {
   /** @param {'unsupported' | 'cancelled' | 'failed'} code */
   constructor(code, message, cause) {
@@ -50,6 +54,9 @@ export function passkeysSupported() {
  * @param {string} [o.userDisplayName]
  * @param {string} [o.userId]         base64url, your opaque record id (no personal data); random if omitted
  * @param {boolean} [o.requireUserVerification=true]  fingerprint, face or PIN
+ * @param {boolean} [o.onPhone=false]  make the passkey on the person's own phone or security
+ *   key (the browser shows a QR to scan), never on this device. For a shared computer, such
+ *   as a front desk, which must not keep anyone's passkey. Allows 3 minutes instead of 1.
  */
 export async function linkPasskey(o) {
   requireSupport();
@@ -63,9 +70,10 @@ export async function linkPasskey(o) {
       authenticatorSelection: {
         residentKey: 'preferred', // lets check-in work without typing a name
         userVerification: uv(o.requireUserVerification),
+        ...(o.onPhone ? { authenticatorAttachment: 'cross-platform' } : {}),
       },
       attestation: 'none',
-      timeout: 60_000,
+      ...phoneOptions(o.onPhone),
     },
   }));
   const r = credential.response;
@@ -93,6 +101,8 @@ export async function linkPasskey(o) {
  * @param {string} o.rpId
  * @param {string[]} [o.credentialIds]  base64url; omit to let the person pick any passkey for rpId
  * @param {boolean} [o.requireUserVerification=true]
+ * @param {boolean} [o.onPhone=false]  ask for the passkey on the person's phone (a QR to scan),
+ *   not this device. Allows 3 minutes instead of 1.
  */
 export async function signInWithPasskey(o) {
   requireSupport();
@@ -102,7 +112,7 @@ export async function signInWithPasskey(o) {
       rpId: o.rpId,
       allowCredentials: (o.credentialIds ?? []).map(id => ({ type: 'public-key', id: fromB64u(id) })),
       userVerification: uv(o.requireUserVerification),
-      timeout: 60_000,
+      ...phoneOptions(o.onPhone),
     },
   }));
   const r = credential.response;
@@ -115,6 +125,11 @@ export async function signInWithPasskey(o) {
       signature: toB64u(r.signature),
     },
   };
+}
+
+// `hints` is a newer WebAuthn option; browsers that do not know it ignore it.
+function phoneOptions(onPhone) {
+  return onPhone ? { hints: ['hybrid'], timeout: ON_PHONE_TIMEOUT_MS } : { timeout: TIMEOUT_MS };
 }
 
 function requireSupport() {
