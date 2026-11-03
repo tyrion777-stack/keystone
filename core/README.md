@@ -396,19 +396,22 @@ for nodes behind NAT. No address is compiled in. The key file defaults to `keyst
 
 | Feature | Status |
 |---|---|
-| Credential revocation | Not yet — you need a revocation list in your own DB |
+| Credential revocation | Not yet — you need a revocation list in your own DB (follow records can already be revoked through the DHT) |
 | Key recovery | Not yet — losing the private key means losing the identity |
 | Key rotation | Not yet — no protocol for migrating to a new keypair |
-| Content encryption | Not yet — signing proves authenticity, not privacy |
-| P2P file transfer | Planned — content layer in progress |
-| QUIC transport | Planned — replacing TCP for mobile/unreliable networks |
+| Cross-device key sync | Not yet |
+| Session keys (forward secrecy) | Not yet |
+| Multiple bootstrap nodes | Not yet — one bootstrap node, given by `--bootstrap` or `KEYSTONE_BOOTSTRAP` |
 | Nostr / NIP-01 compatibility | Planned |
+
+Already done in 0.2.0: content encryption (X25519 envelope encryption), P2P file transfer
+with chunking and resume, QUIC alongside TCP, and circuit relay with hole punching (DCUtR).
 
 ---
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full build plan toward P2P file sharing and the economics layer.
+See [docs/ROADMAP.md](../docs/ROADMAP.md) for the full build plan toward P2P file sharing and the economics layer.
 
 ---
 
