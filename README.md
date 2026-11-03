@@ -95,9 +95,9 @@ chip, and Keystone verifies it like any other key.
 - **`keystone-core` 0.2.0 is on crates.io.** Signatures made by 0.1.x still verify.
 - **Every signing path is pinned by shared test vectors** in [`test-vectors/`](test-vectors/),
   so the Rust, WebAssembly and JavaScript verifiers agree case by case.
-- **Security review:** the findings are fixed in 0.2.0. Content hashes from remote peers are
-  validated before any filesystem use, and chunk sizes and counts from remote peers are
-  bounded.
+- **Security review (our own, not yet an external audit):** the findings are fixed in 0.2.0.
+  Content hashes from remote peers are validated before any filesystem use, and chunk sizes
+  and counts from remote peers are bounded.
 - **The extension and the Android app build from source.** They are not in the stores yet.
 
 Not done yet: key recovery and rotation, cross-device key sync, and more than one bootstrap
